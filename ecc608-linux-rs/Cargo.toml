@@ -1,0 +1,12 @@
+[package]
+name = "ecc608-linux"
+version = "0.1.0"
+authors = ["Marc Nijdam <marc@helium.com>"]
+edition = "2018"
+license = "Apache-2.0"
+
+[dependencies]
+i2c-linux = { git = "https://github.com/madninja/i2c-linux-rs", branch = "madninja/update_2018"}
+bytes = "1"
+bitfield = "0"
+thiserror = "1"
