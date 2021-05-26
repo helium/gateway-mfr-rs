@@ -21,6 +21,8 @@ pub struct Cli {
 pub enum Cmd {
     Info(cmd::info::Cmd),
     Key(cmd::key::Cmd),
+    Provision(cmd::provision::Cmd),
+    Config(cmd::config::Cmd),
     Test(cmd::test::Cmd),
 }
 
@@ -35,6 +37,8 @@ impl Cmd {
         match self {
             Self::Info(cmd) => cmd.run(&mut ecc),
             Self::Key(cmd) => cmd.run(&mut ecc),
+            Self::Provision(cmd) => cmd.run(&mut ecc),
+            Self::Config(cmd) => cmd.run(&mut ecc),
             Self::Test(cmd) => cmd.run(&mut ecc),
         }
     }
