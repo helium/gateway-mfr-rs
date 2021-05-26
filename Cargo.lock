@@ -308,8 +308,8 @@ dependencies = [
 
 [[package]]
 name = "helium-crypto"
-version = "0.0.9-dev"
-source = "git+https://github.com/helium/helium-crypto-rs?branch=main#e4e16ba8e91a2fcdb9dd25d543424245fd87b744"
+version = "0.0.9"
+source = "git+https://github.com/helium/helium-crypto-rs?tag=v0.0.9#1506d72deb2178872e7755275e3e0118f83e5cd0"
 dependencies = [
  "bs58",
  "ed25519-dalek",
