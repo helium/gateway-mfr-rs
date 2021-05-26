@@ -19,10 +19,10 @@ This applications should be used as part of a manufacturing image that does NOT 
 ## Usage
 
 1. Build the application into the manufacturing QA/provisioning image. This will
-   involve installing rust on the host system and cross compiling for running
-   the application on the target hardware. Install
-   [cross](https://github.com/rust-embedded/cross) make cross compiling to
-   targets easier. 
+   involve [installing rust](https://www.rust-lang.org/learn/get-started) on the
+   host system and cross compiling for running the application on the target
+   hardware. [Install cross](https://github.com/rust-embedded/cross) make cross
+   compiling to targets easier. 
 
    For example to compile for Raspbery-Pi's aarch64 architecture:
 
