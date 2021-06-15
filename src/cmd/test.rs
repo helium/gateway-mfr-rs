@@ -26,8 +26,8 @@ impl Cmd {
             .map(|(test, result)| {
                 json!({
                     "test": test,
-                    "result": test_result_to_pass_fail(&result),
-                    "output": test_result_to_string(&result),
+                    "result": test_result_to_pass_fail(result),
+                    "output": test_result_to_string(result),
                 })
             })
             .collect();

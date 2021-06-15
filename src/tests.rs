@@ -133,7 +133,7 @@ fn check_serial(ecc: &mut Ecc) -> Result {
 }
 
 fn check_zone_locked(ecc: &mut Ecc, zone: &Zone) -> Result {
-    match ecc.get_locked(&zone)? {
+    match ecc.get_locked(zone)? {
         true => Ok(()),
         _ => bail!("unlocked"),
     }
