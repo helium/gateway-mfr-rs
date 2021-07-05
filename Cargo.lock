@@ -301,8 +301,8 @@ dependencies = [
 
 [[package]]
 name = "helium-crypto"
-version = "0.2.0"
-source = "git+https://github.com/helium/helium-crypto-rs?tag=v0.2.0#e41042936cd09f85670c9cf9927039899e9a33e8"
+version = "0.2.1"
+source = "git+https://github.com/helium/helium-crypto-rs?tag=v0.2.1#8abf4074633f77e68a21bfc6d8d6367af1231bce"
 dependencies = [
  "bs58",
  "ed25519-dalek",
@@ -387,7 +387,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "p256"
 version = "0.9.0"
-source = "git+https://github.com/helium/elliptic-curves?branch=madninja/compact_point_impl#76f547b420d029cc9eab3a74723773feeb4a8864"
+source = "git+https://github.com/helium/elliptic-curves?branch=madninja/compact_point_impl#b3051010e5f3c05430ed556a0165291322ac2fa5"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
