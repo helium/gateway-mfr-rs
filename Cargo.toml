@@ -1,6 +1,6 @@
 [package]
 name = "gateway-mfr"
-version = "0.1.2-dev"
+version = "0.1.2"
 authors = ["Marc Nijdam <marc@helium.com>"]
 edition = "2018"
 license = "Apache-2.0"
