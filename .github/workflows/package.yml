@@ -10,30 +10,32 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target:
-          - aarch64-unknown-linux-musl
-          - x86_64-unknown-linux-gnu
+        targets:
+          - name: aarch64-linux
+            target: aarch64-unknown-linux-musl
+          - name: x86-64-linux
+            target: x86_64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
+          target: ${{ matrix.targets.target }}
           override: true
       - uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
-          args: --release --target=${{ matrix.target }}
+          args: --release --target=${{ matrix.targets.target }}
       - name: Name Release
         id: name_release
-        run: echo ::set-output name=RELEASE::gateway-mfr-rs-${GITHUB_REF/refs\/tags\//}-${{ matrix.target }}
+        run: echo ::set-output name=RELEASE::gateway-mfr-rs-${GITHUB_REF/refs\/tags\//}-${{ matrix.targets.name }}
       - name: Prepare Release
         env:
           NAME: ${{ steps.name_release.outputs.RELEASE }}
         run: |
           mkdir $NAME
-          mv target/${{ matrix.target }}/release/gateway_mfr $NAME/
+          mv target/${{ matrix.targets.target }}/release/gateway_mfr $NAME/
           cp README.md $NAME/
           cp LICENSE $NAME/
           tar -zcvf $NAME.tar.gz $NAME/
