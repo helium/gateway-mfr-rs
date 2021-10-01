@@ -1,0 +1,48 @@
+name: Package and Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - aarch64-unknown-linux-musl
+          - x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target }}
+      - name: Name Release
+        id: name_release
+        run: echo ::set-output name=RELEASE::gateway-mfr-rs-${GITHUB_REF/refs\/tags\//}-${{ matrix.target }}
+      - name: Prepare Release
+        env:
+          NAME: ${{ steps.name_release.outputs.RELEASE }}
+        run: |
+          mkdir $NAME
+          mv target/${{ matrix.target }}/release/gateway_mfr $NAME/
+          cp README.md $NAME/
+          cp LICENSE $NAME/
+          tar -zcvf $NAME.tar.gz $NAME/
+          sha256sum -b --tag $NAME.tar.gz > $NAME.checksum
+      - name: Push Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ steps.name_release.outputs.RELEASE }}.tar.gz
+            ${{ steps.name_release.outputs.RELEASE }}.checksum
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
