@@ -1,4 +1,5 @@
 use gateway_mfr::{cmd, result::Result};
+use helium_crypto::ecc608;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -33,13 +34,13 @@ pub fn main() -> Result {
 
 impl Cmd {
     fn run(&self, path: PathBuf, address: u16) -> Result {
-        let mut ecc = ecc608_linux::Ecc::from_path(&path.to_string_lossy(), address)?;
+        ecc608::init(&path.to_string_lossy(), address)?;
         match self {
-            Self::Info(cmd) => cmd.run(&mut ecc),
-            Self::Key(cmd) => cmd.run(&mut ecc),
-            Self::Provision(cmd) => cmd.run(&mut ecc),
-            Self::Config(cmd) => cmd.run(&mut ecc),
-            Self::Test(cmd) => cmd.run(&mut ecc),
+            Self::Info(cmd) => cmd.run(),
+            Self::Key(cmd) => cmd.run(),
+            Self::Provision(cmd) => cmd.run(),
+            Self::Config(cmd) => cmd.run(),
+            Self::Test(cmd) => cmd.run(),
         }
     }
 }

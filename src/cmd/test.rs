@@ -1,5 +1,4 @@
 use crate::{cmd::*, tests::Test};
-use ecc608_linux::{KeyConfig, SlotConfig, Zone, MAX_SLOT};
 use serde_json::json;
 
 /// Read the slot configuration for a given slot
@@ -7,18 +6,20 @@ use serde_json::json;
 pub struct Cmd {}
 
 impl Cmd {
-    pub fn run(&self, ecc: &mut Ecc) -> Result {
+    pub fn run(&self) -> Result {
         let tests = [
             Test::serial(),
-            Test::zone_locked(Zone::Data),
-            Test::zone_locked(Zone::Config),
-            Test::slot_config(0..=MAX_SLOT, SlotConfig::default(), "ecc"),
-            Test::key_config(0..=MAX_SLOT, KeyConfig::default(), "ecc"),
+            Test::zone_locked(ecc608::Zone::Data),
+            Test::zone_locked(ecc608::Zone::Config),
+            Test::slot_config(0..=ecc608::MAX_SLOT, ecc608::SlotConfig::default(), "ecc"),
+            Test::key_config(0..=ecc608::MAX_SLOT, ecc608::KeyConfig::default(), "ecc"),
             Test::MinerKey(0),
+            Test::Sign(0),
+            Test::Ecdh(0),
         ];
         let results: Vec<(String, Result)> = tests
             .iter()
-            .map(|test| (test.to_string(), test.run(ecc)))
+            .map(|test| (test.to_string(), test.run()))
             .collect();
 
         let json_results: Vec<serde_json::Value> = results

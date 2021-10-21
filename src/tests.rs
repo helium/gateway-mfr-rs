@@ -1,25 +1,31 @@
-use crate::{bail, compact_key_in_slot, Result};
+use crate::{
+    bail, compact_key_in_slot,
+    ecc608::{self, with_ecc},
+    Keypair, Result,
+};
 use core::ops::RangeBounds;
-use ecc608_linux::{Ecc, KeyConfig, SlotConfig, Zone, MAX_SLOT};
+use helium_crypto::{KeyTag, KeyType, Network, Sign, Verify};
 use std::fmt;
 
 #[derive(Debug)]
 pub enum Test {
     Serial,
-    ZoneLocked(Zone),
+    ZoneLocked(ecc608::Zone),
     SlotConfig {
         start: u8,
         end: u8,
-        config: SlotConfig,
+        config: ecc608::SlotConfig,
         name: &'static str,
     },
     KeyConfig {
         start: u8,
         end: u8,
-        config: KeyConfig,
+        config: ecc608::KeyConfig,
         name: &'static str,
     },
     MinerKey(u8),
+    Sign(u8),
+    Ecdh(u8),
 }
 
 impl fmt::Display for Test {
@@ -28,8 +34,8 @@ impl fmt::Display for Test {
             Self::Serial => f.write_str("serial"),
             Self::ZoneLocked(zone) => {
                 let zone_str = match zone {
-                    Zone::Config => "config",
-                    Zone::Data => "data",
+                    ecc608::Zone::Config => "config",
+                    ecc608::Zone::Data => "data",
                 };
                 f.write_fmt(format_args!("zone_locked({})", zone_str))
             }
@@ -40,6 +46,8 @@ impl fmt::Display for Test {
                 start, end, name, ..
             } => f.write_fmt(format_args!("key_config({}..={}, {})", start, end, name)),
             Self::MinerKey(slot) => f.write_fmt(format_args!("miner_key({})", slot)),
+            Self::Sign(slot) => f.write_fmt(format_args!("sign({})", slot)),
+            Self::Ecdh(slot) => f.write_fmt(format_args!("ecdh({})", slot)),
         }
     }
 }
@@ -49,7 +57,7 @@ impl Test {
         Self::Serial
     }
 
-    pub fn zone_locked(zone: Zone) -> Self {
+    pub fn zone_locked(zone: ecc608::Zone) -> Self {
         Self::ZoneLocked(zone)
     }
 
@@ -65,7 +73,7 @@ impl Test {
         let end = match range.end_bound() {
             Bound::Included(&n) => n,
             Bound::Excluded(&n) => n.checked_sub(1).expect("out of bound"),
-            Bound::Unbounded => MAX_SLOT,
+            Bound::Unbounded => ecc608::MAX_SLOT,
         };
 
         assert!(
@@ -75,10 +83,10 @@ impl Test {
             end,
         );
         assert!(
-            end <= MAX_SLOT,
+            end <= ecc608::MAX_SLOT,
             "range end out of bounds: {:?} <= {:?}",
             end,
-            MAX_SLOT,
+            ecc608::MAX_SLOT,
         );
 
         (begin, end)
@@ -86,7 +94,7 @@ impl Test {
 
     pub fn slot_config(
         range: impl RangeBounds<u8>,
-        config: SlotConfig,
+        config: ecc608::SlotConfig,
         name: &'static str,
     ) -> Self {
         let (start, end) = Self::get_start_end(range);
@@ -98,7 +106,11 @@ impl Test {
         }
     }
 
-    pub fn key_config(range: impl RangeBounds<u8>, config: KeyConfig, name: &'static str) -> Self {
+    pub fn key_config(
+        range: impl RangeBounds<u8>,
+        config: ecc608::KeyConfig,
+        name: &'static str,
+    ) -> Self {
         let (start, end) = Self::get_start_end(range);
         Self::KeyConfig {
             start,
@@ -108,23 +120,25 @@ impl Test {
         }
     }
 
-    pub fn run(&self, ecc: &mut Ecc) -> Result {
+    pub fn run(&self) -> Result {
         match self {
-            Self::Serial => check_serial(ecc),
-            Self::ZoneLocked(zone) => check_zone_locked(ecc, zone),
+            Self::Serial => check_serial(),
+            Self::ZoneLocked(zone) => check_zone_locked(zone),
             Self::SlotConfig {
                 start, end, config, ..
-            } => check_slot_configs(ecc, *start, *end, config),
+            } => check_slot_configs(*start, *end, config),
             Self::KeyConfig {
                 start, end, config, ..
-            } => check_key_configs(ecc, *start, *end, config),
-            Self::MinerKey(slot) => check_miner_key(ecc, *slot),
+            } => check_key_configs(*start, *end, config),
+            Self::MinerKey(slot) => check_miner_key(*slot),
+            Self::Sign(slot) => check_sign(*slot),
+            Self::Ecdh(slot) => check_ecdh(*slot),
         }
     }
 }
 
-fn check_serial(ecc: &mut Ecc) -> Result {
-    let bytes = ecc.get_serial()?;
+fn check_serial() -> Result {
+    let bytes = with_ecc(|ecc| ecc.get_serial())?;
     if bytes[0] == 0x01 && bytes[1] == 0x23 && bytes[8] == 0xee {
         Ok(())
     } else {
@@ -132,16 +146,16 @@ fn check_serial(ecc: &mut Ecc) -> Result {
     }
 }
 
-fn check_zone_locked(ecc: &mut Ecc, zone: &Zone) -> Result {
-    match ecc.get_locked(zone)? {
+fn check_zone_locked(zone: &ecc608::Zone) -> Result {
+    match with_ecc(|ecc| ecc.get_locked(zone))? {
         true => Ok(()),
         _ => bail!("unlocked"),
     }
 }
 
-fn check_slot_configs(ecc: &mut Ecc, start: u8, end: u8, expected: &SlotConfig) -> Result {
+fn check_slot_configs(start: u8, end: u8, expected: &ecc608::SlotConfig) -> Result {
     for slot in start..=end {
-        match ecc.get_slot_config(slot)? {
+        match with_ecc(|ecc| ecc.get_slot_config(slot))? {
             config if &config == expected => continue,
             _config => bail!("invalid slot: {:?}", slot),
         }
@@ -149,9 +163,9 @@ fn check_slot_configs(ecc: &mut Ecc, start: u8, end: u8, expected: &SlotConfig) 
     Ok(())
 }
 
-fn check_key_configs(ecc: &mut Ecc, start: u8, end: u8, expected: &KeyConfig) -> Result {
+fn check_key_configs(start: u8, end: u8, expected: &ecc608::KeyConfig) -> Result {
     for slot in start..=end {
-        match ecc.get_key_config(slot)? {
+        match with_ecc(|ecc| ecc.get_key_config(slot))? {
             config if &config == expected => continue,
             _config => bail!("invalid slot: {:?}", slot),
         }
@@ -159,7 +173,34 @@ fn check_key_configs(ecc: &mut Ecc, start: u8, end: u8, expected: &KeyConfig) ->
     Ok(())
 }
 
-fn check_miner_key(ecc: &mut Ecc, slot: u8) -> Result {
-    let _ = compact_key_in_slot(ecc, slot)?;
+fn check_miner_key(slot: u8) -> Result {
+    let _ = with_ecc(|ecc| compact_key_in_slot(ecc, slot))?;
+    Ok(())
+}
+
+fn check_sign(slot: u8) -> Result {
+    const DATA: &[u8] = b"hello world";
+    let keypair = with_ecc(|ecc| compact_key_in_slot(ecc, slot))?;
+    let signature = keypair.sign(DATA)?;
+    keypair.public_key().verify(DATA, &signature)?;
+    Ok(())
+}
+
+fn check_ecdh(slot: u8) -> Result {
+    use rand::rngs::OsRng;
+    let keypair = with_ecc(|ecc| compact_key_in_slot(ecc, slot))?;
+    let other_keypair = Keypair::generate(
+        KeyTag {
+            network: Network::MainNet,
+            key_type: KeyType::EccCompact,
+        },
+        &mut OsRng,
+    );
+    let ecc_shared_secret = keypair.ecdh(other_keypair.public_key())?;
+    let other_shared_secret = other_keypair.ecdh(keypair.public_key())?;
+
+    if ecc_shared_secret.as_bytes() != other_shared_secret.as_bytes() {
+        bail!("invalid ecdh shared secret");
+    }
     Ok(())
 }

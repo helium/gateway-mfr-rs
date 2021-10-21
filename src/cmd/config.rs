@@ -1,5 +1,4 @@
 use crate::cmd::*;
-use ecc608_linux::Zone;
 use serde_json::json;
 
 /// Gets the zone, slot or key config for a given ecc slot
@@ -24,21 +23,21 @@ pub struct ConfigSlot {
 /// Gets the configuration for a given zone (data or config)
 #[derive(Debug, StructOpt)]
 pub struct ConfigZone {
-    zone: Zone,
+    zone: ecc608::Zone,
 }
 
 impl Cmd {
-    pub fn run(&self, ecc: &mut Ecc) -> Result {
+    pub fn run(&self) -> Result {
         match self {
-            Self::Key(cmd) => cmd.run(ecc),
-            Self::Slot(cmd) => cmd.run(ecc),
+            Self::Key(cmd) => cmd.run(),
+            Self::Slot(cmd) => cmd.run(),
         }
     }
 }
 
 impl ConfigKey {
-    pub fn run(&self, ecc: &mut Ecc) -> Result {
-        let config = ecc.get_key_config(self.slot)?;
+    pub fn run(&self) -> Result {
+        let config = with_ecc(|ecc| ecc.get_key_config(self.slot))?;
         let json = json!({
             "slot": self.slot,
             "key_config": config,
@@ -48,8 +47,8 @@ impl ConfigKey {
 }
 
 impl ConfigSlot {
-    pub fn run(&self, ecc: &mut Ecc) -> Result {
-        let config = ecc.get_slot_config(self.slot)?;
+    pub fn run(&self) -> Result {
+        let config = with_ecc(|ecc| ecc.get_slot_config(self.slot))?;
         let json = json!({
             "slot": self.slot,
             "slot_config": config,
@@ -59,8 +58,8 @@ impl ConfigSlot {
 }
 
 impl ConfigZone {
-    pub fn run(&self, ecc: &mut Ecc) -> Result {
-        let locked = ecc.get_locked(&self.zone)?;
+    pub fn run(&self) -> Result {
+        let locked = with_ecc(|ecc| ecc.get_locked(&self.zone))?;
         let json = json!({
             "zone": self.zone.to_string(),
             "locked": locked,
