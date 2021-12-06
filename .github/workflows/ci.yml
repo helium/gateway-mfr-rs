@@ -45,6 +45,7 @@ jobs:
           - x86_64-unknown-linux-gnu
           - armv7-unknown-linux-musleabihf
           - mips-unknown-linux-musl
+          - arm-unknown-linux-gnueabihf
     steps:
       - uses: actions-rs/toolchain@v1
         with:
