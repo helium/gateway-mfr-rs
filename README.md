@@ -1,8 +1,8 @@
 [![Build Status][actions-badge]][actions-url]
 [![Discord chat][discord-badge]][discord-url]
 
-[actions-badge]: https://github.com/helium/gateway-mfr-rs/actions/workflows/rust.yml/badge.svg
-[actions-url]: https://github.com/helium/gateway-mfr-rs/actions/workflows/rust.yml
+[actions-badge]: https://github.com/helium/gateway-mfr-rs/actions/workflows/ci.yml/badge.svg
+[actions-url]: https://github.com/helium/gateway-mfr-rs/actions/workflows/ci.yml
 [discord-badge]: https://img.shields.io/discord/500028886025895936.svg?logo=discord&style=flat-square
 [discord-url]: https://discord.gg/helium
 
@@ -22,7 +22,7 @@ This applications should be used as part of a manufacturing image that does NOT 
    involve [installing rust](https://www.rust-lang.org/learn/get-started) on the
    host system and cross compiling for running the application on the target
    hardware. [Install cross](https://github.com/rust-embedded/cross) make cross
-   compiling to targets easier. 
+   compiling to targets easier.
 
    For example to compile for Raspbery-Pi's aarch64 architecture:
 
@@ -34,31 +34,30 @@ This applications should be used as part of a manufacturing image that does NOT 
 
 2. As part of the provisioning/QA steps start and provision the ECC:
 
-    ```shell
-    gateway_mfr provision
-    ```
+   ```shell
+   gateway_mfr provision
+   ```
 
-    This will configure the ECC, generate the miner key and output it to stdout.
-    Capture this output and collect it and other required information for use by
-    the Onboarding Server.
+   This will configure the ECC, generate the miner key and output it to stdout.
+   Capture this output and collect it and other required information for use by
+   the Onboarding Server.
 
-    If you need the extract the onboarding/miner key at a later stage you can
-    run:
+   If you need the extract the onboarding/miner key at a later stage you can
+   run:
 
-    ```shell
-    gateway_mfr key 0
-    ```
+   ```shell
+   gateway_mfr key 0
+   ```
 
 3. To verify that the ECC is configured correctly you can run a final test cycle as part of the QA steps:
 
-    ```shell
-    gateway_mfr test
-    ```
+   ```shell
+   gateway_mfr test
+   ```
 
-    This will output a json table with all executed ECC tests and their results. This includes a top level `result` key with `pass` or `fail` as the value. 
+   This will output a json table with all executed ECC tests and their results. This includes a top level `result` key with `pass` or `fail` as the value.
 
 The ECC is now configured for production use. The production image, including
 the Helium miner can be installed and started. If configured correctly the miner
 software will use the configured key in slot 0 as the miner key and use the ECC
 for secure transaction signing.
-
