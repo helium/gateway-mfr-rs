@@ -235,7 +235,7 @@ dependencies = [
 
 [[package]]
 name = "gateway-mfr"
-version = "0.1.7"
+version = "0.1.8-dev"
 dependencies = [
  "angry-purple-tiger",
  "anyhow",
