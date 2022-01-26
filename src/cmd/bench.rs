@@ -14,7 +14,7 @@ pub struct Cmd {
     pub slot: u8,
 
     /// Number of iterations to use for test
-    #[structopt(long, default_value = "1000")]
+    #[structopt(long, default_value = "100")]
     pub iterations: u32,
 }
 
