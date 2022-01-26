@@ -25,6 +25,7 @@ pub enum Cmd {
     Provision(cmd::provision::Cmd),
     Config(cmd::config::Cmd),
     Test(cmd::test::Cmd),
+    Bench(cmd::bench::Cmd),
 }
 
 pub fn main() -> Result {
@@ -41,6 +42,7 @@ impl Cmd {
             Self::Provision(cmd) => cmd.run(),
             Self::Config(cmd) => cmd.run(),
             Self::Test(cmd) => cmd.run(),
+            Self::Bench(cmd) => cmd.run(),
         }
     }
 }

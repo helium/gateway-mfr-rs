@@ -8,6 +8,7 @@ pub use helium_crypto::{
 };
 pub use structopt::{clap::arg_enum, StructOpt};
 
+pub mod bench;
 pub mod config;
 pub mod info;
 pub mod key;

@@ -18,5 +18,5 @@ serde = "1"
 rand = "0.8"
 serde_json = "1"
 angry-purple-tiger = "0"
-helium-crypto = { git = "https://github.com/helium/helium-crypto-rs", tag = "v0.3.1", features = ["ecc608"]}
+helium-crypto = { git = "https://github.com/helium/helium-crypto-rs", tag = "v0.3.2", features = ["ecc608"]}
 
