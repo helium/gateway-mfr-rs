@@ -43,7 +43,8 @@ address the specific system and entry used for key material and provisioning.
 
 1. Using the application can be done in two ways;
 
-   - Download a pre-built binary from the [releases]() page.
+   - Download a pre-built binary from the
+     [releases](https://github.com/helium/gateway-mfr-rs/releases/latest) page.
 
    - Build the application. This will involve
      [installing rust](https://www.rust-lang.org/learn/get-started) on the host
