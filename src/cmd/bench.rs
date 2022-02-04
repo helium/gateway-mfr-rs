@@ -1,8 +1,9 @@
-use crate::cmd::*;
-use helium_crypto::Sign;
+use crate::{cmd::print_json, Device, Result};
+use helium_crypto::{Keypair, Sign};
 use rand::{rngs::OsRng, RngCore};
 use serde_json::json;
 use std::time::{Duration, Instant};
+use structopt::StructOpt;
 
 /// Run a benchmark test.
 ///
@@ -10,17 +11,14 @@ use std::time::{Duration, Instant};
 /// handle
 #[derive(Debug, StructOpt)]
 pub struct Cmd {
-    /// Slot to use for benchmark
-    pub slot: u8,
-
     /// Number of iterations to use for test
-    #[structopt(long, default_value = "100")]
+    #[structopt(long, short, default_value = "100")]
     pub iterations: u32,
 }
 
 impl Cmd {
-    pub fn run(&self) -> Result {
-        let keypair = with_ecc(|ecc| compact_key_in_slot(ecc, self.slot))?;
+    pub fn run(&self, device: &Device) -> Result {
+        let keypair = device.get_keypair(false)?;
         let duration = bench_sign(&keypair, self.iterations)?;
         let rate = self.iterations as f64 / duration.as_secs_f64();
         let avg_ms = duration.as_millis() as f64 / self.iterations as f64;

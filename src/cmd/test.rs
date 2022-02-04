@@ -1,63 +1,71 @@
-use crate::{cmd::*, tests::Test};
+use crate::{
+    cmd::print_json,
+    device::{
+        test::{self, TestOutcome, TestResult},
+        Device,
+    },
+    Result,
+};
 use serde_json::json;
+use std::collections::HashMap;
+use structopt::StructOpt;
 
 /// Read the slot configuration for a given slot
 #[derive(Debug, StructOpt)]
 pub struct Cmd {}
 
 impl Cmd {
-    pub fn run(&self) -> Result {
-        let tests = [
-            Test::serial(),
-            Test::zone_locked(ecc608::Zone::Data),
-            Test::zone_locked(ecc608::Zone::Config),
-            Test::slot_config(0..=ecc608::MAX_SLOT, ecc608::SlotConfig::default(), "ecc"),
-            Test::key_config(0..=ecc608::MAX_SLOT, ecc608::KeyConfig::default(), "ecc"),
-            Test::MinerKey(0),
-            Test::Sign(0),
-            Test::Ecdh(0),
-        ];
-        let results: Vec<(String, Result)> = tests
+    pub fn run(&self, device: &Device) -> Result {
+        let tests = device.get_tests();
+        let results: Vec<(String, TestResult)> = tests
             .iter()
             .map(|test| (test.to_string(), test.run()))
             .collect();
-
-        let json_results: Vec<serde_json::Value> = results
-            .iter()
+        let passed = test_results_to_pass_fail(&results);
+        let json_results: Vec<(String, serde_json::Value)> = results
+            .into_iter()
             .map(|(test, result)| {
-                json!({
-                    "test": test,
-                    "result": test_result_to_pass_fail(result),
-                    "output": test_result_to_string(result),
-                })
+                let (out_name, out_json) = test_result_to_json(&result);
+                (
+                    test,
+                    json!({
+                        "result": test_result_to_pass_fail(&result),
+                        out_name: out_json,
+                    }),
+                )
             })
             .collect();
-
+        let result_map: HashMap<String, serde_json::Value> = HashMap::from_iter(json_results);
         let json = json!({
-            "result": test_results_to_pass_fail(&results),
-            "tests": json_results,
+            "result": passed,
+            "tests": result_map,
         });
 
         print_json(&json)
     }
 }
 
-fn test_result_to_pass_fail(result: &Result) -> String {
-    result.as_ref().map_or("fail", |_| "pass").to_string()
+fn test_result_to_pass_fail(result: &TestResult) -> String {
+    result
+        .as_ref()
+        .map(|outcome| outcome.to_string())
+        .unwrap_or_else(|_| "fail".to_string())
 }
 
-fn test_results_to_pass_fail(results: &[(String, Result)]) -> String {
-    if results.iter().all(|(_, result)| result.is_ok()) {
+fn test_results_to_pass_fail(results: &[(String, TestResult)]) -> &'static str {
+    if results
+        .iter()
+        .all(|(_, result)| result.as_ref().map_or(false, |outcome| outcome.passed()))
+    {
         "pass"
     } else {
         "fail"
     }
-    .to_string()
 }
 
-fn test_result_to_string(result: &Result) -> String {
-    match result {
-        Ok(()) => "ok".to_string(),
-        Err(err) => format!("{:?}", err),
-    }
+fn test_result_to_json(result: &TestResult) -> (&'static str, TestOutcome) {
+    result
+        .as_ref()
+        .map(|outcome| ("checks", outcome.clone()))
+        .unwrap_or_else(|err| ("error", test::fail(format!("{:?}", err))))
 }
