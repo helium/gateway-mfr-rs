@@ -2,7 +2,7 @@
 name = "gateway-mfr"
 version = "0.1.8-dev"
 authors = ["Marc Nijdam <marc@helium.com>"]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
 
 [[bin]]
@@ -14,9 +14,12 @@ doc = false
 structopt = "0"
 anyhow = "1"
 semver = "0"
-serde = "1"
+serde = {version = "1", features = ["derive"]}
 rand = "0.8"
 serde_json = "1"
+serde_urlencoded = "*"
+http = "0"
+bytes = "*"
 angry-purple-tiger = "0"
-helium-crypto = { git = "https://github.com/helium/helium-crypto-rs", tag = "v0.3.2", features = ["ecc608"]}
+helium-crypto = { git = "https://github.com/helium/helium-crypto-rs", tag = "v0.3.4", features = ["ecc608"]}
 

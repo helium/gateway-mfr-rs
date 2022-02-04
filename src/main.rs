@@ -1,18 +1,12 @@
-use gateway_mfr::{cmd, result::Result};
-use helium_crypto::ecc608;
-use std::path::PathBuf;
+use gateway_mfr::{cmd, Device, Result};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = env!("CARGO_BIN_NAME"), version = env!("CARGO_PKG_VERSION"), about = "Gateway Manufacturing ")]
 pub struct Cli {
-    /// The i2c device path
-    #[structopt(long, default_value = "/dev/i2c-1")]
-    path: PathBuf,
-
-    /// The bus address
-    #[structopt(long, default_value = "96")]
-    address: u16,
+    /// The security device to use
+    #[structopt(long, default_value = "ecc://i2c-1")]
+    device: Device,
 
     #[structopt(subcommand)]
     cmd: Cmd,
@@ -30,19 +24,18 @@ pub enum Cmd {
 
 pub fn main() -> Result {
     let cli = Cli::from_args();
-    cli.cmd.run(cli.path, cli.address)
+    cli.cmd.run(&cli.device)
 }
 
 impl Cmd {
-    fn run(&self, path: PathBuf, address: u16) -> Result {
-        ecc608::init(&path.to_string_lossy(), address)?;
+    fn run(&self, device: &Device) -> Result {
         match self {
-            Self::Info(cmd) => cmd.run(),
-            Self::Key(cmd) => cmd.run(),
-            Self::Provision(cmd) => cmd.run(),
-            Self::Config(cmd) => cmd.run(),
-            Self::Test(cmd) => cmd.run(),
-            Self::Bench(cmd) => cmd.run(),
+            Self::Info(cmd) => cmd.run(device),
+            Self::Key(cmd) => cmd.run(device),
+            Self::Provision(cmd) => cmd.run(device),
+            Self::Config(cmd) => cmd.run(device),
+            Self::Test(cmd) => cmd.run(device),
+            Self::Bench(cmd) => cmd.run(device),
         }
     }
 }

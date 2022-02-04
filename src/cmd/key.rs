@@ -1,6 +1,8 @@
-use crate::cmd::*;
+use crate::{cmd::print_json, Device, Result};
 use angry_purple_tiger::AnimalName;
+use helium_crypto::Keypair;
 use serde_json::json;
+use structopt::StructOpt;
 
 /// Prints public key information for a given slot.
 ///
@@ -8,8 +10,6 @@ use serde_json::json;
 /// slot.
 #[derive(Debug, StructOpt)]
 pub struct Cmd {
-    /// Slot to generate public key for
-    pub slot: u8,
     /// Generate a new private key in the slot. WARNING: This will overwrite the
     /// existing key in the slot
     #[structopt(long)]
@@ -17,35 +17,17 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub fn run(&self) -> Result {
-        let keypair: Keypair = with_ecc(|ecc| {
-            if self.generate {
-                generate_compact_key_in_slot(ecc, self.slot)
-            } else {
-                compact_key_in_slot(ecc, self.slot)
-            }
-        })?;
-
-        let public_key_str = keypair.public_key().to_string();
-
-        let json = json!({
-            "slot": self.slot,
-            "key": public_key_str,
-            "name": public_key_str.parse::<AnimalName>()?.to_string(),
-        });
-        print_json(&json)
+    pub fn run(&self, device: &Device) -> Result {
+        let keypair = device.get_keypair(self.generate)?;
+        print_keypair(&keypair)
     }
 }
 
-fn generate_compact_key_in_slot(ecc: &mut Ecc, slot: u8) -> Result<Keypair> {
-    let mut try_count = 5;
-    loop {
-        ecc.genkey(ecc608::KeyType::Private, slot)?;
-
-        match compact_key_in_slot(ecc, slot) {
-            Ok(keypair) => return Ok(keypair),
-            Err(err) if try_count == 0 => return Err(err),
-            Err(_) => try_count -= 1,
-        }
-    }
+pub(crate) fn print_keypair(keypair: &Keypair) -> Result {
+    let public_key_str = keypair.public_key().to_string();
+    let json = json!({
+        "key": public_key_str,
+        "name": public_key_str.parse::<AnimalName>()?.to_string(),
+    });
+    print_json(&json)
 }
