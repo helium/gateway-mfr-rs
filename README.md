@@ -8,56 +8,105 @@
 
 ## gateway-mfr-rs
 
-The gateway_mfr application provisions an attached ECC508/ECC608 for use as part of a Helium hotspot.
+The gateway_mfr application provisions an security part (like the ECC508/ECC608)
+for use as part of a Helium hotspot, and provides utilities for testing and
+benchmarking the addressed part.
 
-It does this by configuring and locking the ECC configuration fields and then generating the miner key in slot 0.
+In the ECC case, it does provisioning by configuring and locking the ECC
+configuration fields and then generating the miner key in the slot identified in
+the device URL (default slot 0).
 
-The public part of the miner key needs to be captured from the output of this application and supplied as part of the data required to get into the Helium Onboarding Server if gateway add and assert location transactions are to be paid for on behalf of the user.
+Other security parts may be provisioned in different ways or may have been
+locked down before hotspot integration.
 
-This applications should be used as part of a manufacturing image that does NOT include the Helium miner software and is solely used for testing and provisioning the built hotspot before setting up the production miner image.
+The public part of the miner key needs to be captured from the output of this
+application and supplied as part of the data required to get into the Helium
+Onboarding Server if gateway add and assert location transactions are to be paid
+for on behalf of the user.
+
+This applications should be used as part of a manufacturing image that does NOT
+include the Helium miner software and is solely used for testing and
+provisioning the built hotspot before setting up the production miner image.
+
+## Addressing
+
+The security device to provision or test is addressed using a `--device` option.
+In the ECC case, for exmaple this URL could be `ecc://i2c-1:96?slot=0` to
+address the `/dev/i2c-1` linux device, using the bus address`96` and slot `0` on
+the ECC device. This is also the default URL for the application, and must be
+provided for ECC parts with a different bus address or slot.
+
+Each security part will have it's own URL scheme and host/path arguments to
+address the specific system and entry used for key material and provisioning.
 
 ## Usage
 
-1. Build the application into the manufacturing QA/provisioning image. This will
-   involve [installing rust](https://www.rust-lang.org/learn/get-started) on the
-   host system and cross compiling for running the application on the target
-   hardware. [Install cross](https://github.com/rust-embedded/cross) make cross
-   compiling to targets easier.
+1. Using the application can be done in two ways;
 
-   For example to compile for Raspbery-Pi's aarch64 architecture:
+   - Download a pre-built binary from the [releases]() page.
 
-   ```shell
-   cross build --target aarch64-unknown-linux-musl --release
-   ```
+   - Build the application. This will involve
+     [installing rust](https://www.rust-lang.org/learn/get-started) on the host
+     system and cross compiling for running the application on the target
+     hardware. [Install cross](https://github.com/rust-embedded/cross) make
+     cross compiling to targets easier.
 
-   The resulting cross compiled binary will be located in `./target/aarch64-unknown-linux-musl/release/gateway_mfr`
+     For example to compile for Raspbery-Pi's aarch64 architecture:
 
-2. As part of the provisioning/QA steps start and provision the ECC:
+     ```shell
+     cross build --target aarch64-unknown-linux-musl --release
+     ```
+
+     The resulting cross compiled binary will be located in `./target/ aarch64-unknown-linux-musl/release/gateway_mfr`
+
+2. As part of the provisioning/QA steps start and provision the security part:
 
    ```shell
    gateway_mfr provision
    ```
 
-   This will configure the ECC, generate the miner key and output it to stdout.
-   Capture this output and collect it and other required information for use by
-   the Onboarding Server.
+   This will configure the security part, generate the miner key and output it
+   to stdout. Capture this output and collect it and other required information
+   for use by the Onboarding Server.
 
    If you need the extract the onboarding/miner key at a later stage you can
    run:
 
    ```shell
-   gateway_mfr key 0
+   gateway_mfr key
    ```
 
-3. To verify that the ECC is configured correctly you can run a final test cycle as part of the QA steps:
+   **NOTE**: Do **not** include this application in the final image as it is not
+   used as part of normal hotspot operations.
+
+3. To verify that the security part is configured correctly you can run a final
+   test cycle as part of the QA steps:
 
    ```shell
    gateway_mfr test
    ```
 
-   This will output a json table with all executed ECC tests and their results. This includes a top level `result` key with `pass` or `fail` as the value.
+   This will output a json table with all executed tests for the security part
+   and their results. This includes a top level `result` key with `pass` or
+   `fail` as the value.
 
-The ECC is now configured for production use. The production image, including
-the Helium miner can be installed and started. If configured correctly the miner
-software will use the configured key in slot 0 as the miner key and use the ECC
-for secure transaction signing.
+   Tests are specific for each security part and are intended to test that the
+   security part is locked, and that signing and ecdh opterations function
+
+4. To benchmark a security part as part of integration:
+
+   ```shell
+   gateway_mfr bench
+   ```
+
+   This will run a number of signing iterations (default 100) and report the
+   average signing time and the number of signing operatins per second.
+
+   Helium Hotspots using a full miner will need 6-7 or better signing operations
+   per second while light/dataonly hotspots should be able to operate with
+   around 3-5 operations per second (this number needs to be confirmed).
+
+The security part is now configured for production use. The production image,
+including the Helium miner can be installed and started. If configured correctly
+the miner software will use the configured key in slot 0 as the miner key and
+use the security part for secured transaction signing.
