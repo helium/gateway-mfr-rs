@@ -1,6 +1,9 @@
 use crate::{
     anyhow,
-    device::test::{self, TestResult},
+    device::{
+        test::{self, TestResult},
+        DeviceArgs,
+    },
     Result,
 };
 use bytes::Bytes;
@@ -11,7 +14,6 @@ use helium_crypto::{
 use http::Uri;
 use serde::{Serialize, Serializer};
 use std::{
-    collections::HashMap,
     fmt,
     path::{Path, PathBuf},
 };
@@ -32,15 +34,9 @@ impl Device {
     /// <address> is the bus address (default 96, ignored for swi), and <slot>
     /// is the slot to use for key lookup/manipulation (default: 0)
     pub fn from_url(url: &Uri) -> Result<Self> {
-        let args = url
-            .query()
-            .map_or_else(
-                || Ok(HashMap::new()),
-                serde_urlencoded::from_str::<HashMap<String, u8>>,
-            )
-            .map_err(|err| anyhow!("invalid ecc bus options: {:?}", err))?;
+        let args = DeviceArgs::from_uri(url)?;
         let address = url.port_u16().unwrap_or(96);
-        let slot = *args.get("slot").unwrap_or(&0);
+        let slot = args.get("slot", 0)?;
         let path = url
             .host()
             .map(|dev| Path::new("/dev").join(dev))
