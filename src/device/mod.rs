@@ -2,9 +2,10 @@ use crate::{anyhow, Result};
 use helium_crypto::Keypair;
 use http::Uri;
 use serde::Serialize;
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 mod ecc;
+mod file;
 
 /// A security device to work with. Security devices come in all forms. This
 /// abstracts them into one with a well defined interface for doing what this
@@ -12,7 +13,10 @@ mod ecc;
 #[derive(Debug)]
 pub enum Device {
     Ecc(ecc::Device),
+    File(file::Device),
 }
+
+pub struct DeviceArgs(HashMap<String, String>);
 
 /// Represents the configuration state for the given security device. This
 /// information should include enpugh detail to convey that the security device
@@ -21,16 +25,21 @@ pub enum Device {
 #[serde(untagged)]
 pub enum Config {
     Ecc(ecc::Config),
+    File(file::Config),
 }
 
 pub mod test {
-    use crate::{device::ecc, Result};
+    use crate::{
+        device::{ecc, file},
+        Result,
+    };
     use serde::Serialize;
     use std::{collections::HashMap, fmt};
 
     /// Represents a single test for a given device
     pub enum Test {
         Ecc(ecc::Test),
+        File(file::Test),
     }
 
     #[derive(Debug, Serialize, Clone)]
@@ -73,6 +82,7 @@ pub mod test {
         pub fn run(&self) -> TestResult {
             match self {
                 Self::Ecc(test) => test.run(),
+                Self::File(test) => test.run(),
             }
         }
     }
@@ -81,6 +91,7 @@ pub mod test {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
                 Self::Ecc(test) => test.fmt(f),
+                Self::File(test) => test.fmt(f),
             }
         }
     }
@@ -116,8 +127,34 @@ impl FromStr for Device {
             .map_err(|err| anyhow!("invalid device url \"{}\": {:?}", s, err))?;
         match url.scheme_str() {
             Some("ecc") => Ok(Self::Ecc(ecc::Device::from_url(&url)?)),
+            Some("file") | None => Ok(Self::File(file::Device::from_url(&url)?)),
             _ => Err(anyhow!("invalid device url \"{}\"", s)),
         }
+    }
+}
+
+impl DeviceArgs {
+    pub(crate) fn from_uri(url: &Uri) -> Result<Self> {
+        let args = url
+            .query()
+            .map_or_else(
+                || Ok(HashMap::new()),
+                serde_urlencoded::from_str::<HashMap<String, String>>,
+            )
+            .map_err(|err| anyhow!("invalid device url \"{url}\": {err:?}"))?;
+        Ok(Self(args))
+    }
+
+    pub fn get<T>(&self, name: &str, default: T) -> Result<T>
+    where
+        T: std::str::FromStr,
+        <T as std::str::FromStr>::Err: std::fmt::Debug,
+    {
+        self.0
+            .get(name)
+            .map(|s| s.parse::<T>())
+            .unwrap_or(Ok(default))
+            .map_err(|err| anyhow!("invalid uri argument for {name}: {err:?}"))
     }
 }
 
@@ -125,6 +162,7 @@ impl Device {
     pub fn get_info(&self) -> Result<Info> {
         let info = match self {
             Self::Ecc(device) => Info::Ecc(device.get_info()?),
+            Self::File(device) => Info::File(device.get_info()?),
         };
         Ok(info)
     }
@@ -132,6 +170,7 @@ impl Device {
     pub fn get_config(&self) -> Result<Config> {
         let config = match self {
             Self::Ecc(device) => Config::Ecc(device.get_config()?),
+            Self::File(device) => Config::File(device.get_config()?),
         };
         Ok(config)
     }
@@ -139,6 +178,7 @@ impl Device {
     pub fn get_keypair(&self, create: bool) -> Result<Keypair> {
         let keypair = match self {
             Self::Ecc(device) => device.get_keypair(create)?,
+            Self::File(device) => device.get_keypair(create)?,
         };
         Ok(keypair)
     }
@@ -146,6 +186,7 @@ impl Device {
     pub fn provision(&self) -> Result<Keypair> {
         let keypair = match self {
             Self::Ecc(device) => device.provision()?,
+            Self::File(device) => device.provision()?,
         };
         Ok(keypair)
     }
@@ -157,6 +198,11 @@ impl Device {
                 .into_iter()
                 .map(test::Test::Ecc)
                 .collect(),
+            Self::File(device) => device
+                .get_tests()
+                .into_iter()
+                .map(test::Test::File)
+                .collect(),
         }
     }
 }
@@ -166,4 +212,5 @@ impl Device {
 #[serde(untagged)]
 pub enum Info {
     Ecc(ecc::Info),
+    File(file::Info),
 }
