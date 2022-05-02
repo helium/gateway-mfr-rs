@@ -6,6 +6,7 @@ use std::{collections::HashMap, str::FromStr};
 
 mod ecc;
 mod file;
+mod tpm;
 
 /// A security device to work with. Security devices come in all forms. This
 /// abstracts them into one with a well defined interface for doing what this
@@ -13,6 +14,7 @@ mod file;
 #[derive(Debug)]
 pub enum Device {
     Ecc(ecc::Device),
+    Tpm(tpm::Device),
     File(file::Device),
 }
 
@@ -25,12 +27,13 @@ pub struct DeviceArgs(HashMap<String, String>);
 #[serde(untagged)]
 pub enum Config {
     Ecc(ecc::Config),
+    Tpm(tpm::Config),
     File(file::Config),
 }
 
 pub mod test {
     use crate::{
-        device::{ecc, file},
+        device::{ecc, file, tpm},
         Result,
     };
     use serde::Serialize;
@@ -39,6 +42,7 @@ pub mod test {
     /// Represents a single test for a given device
     pub enum Test {
         Ecc(ecc::Test),
+        Tpm(tpm::Test),
         File(file::Test),
     }
 
@@ -82,6 +86,7 @@ pub mod test {
         pub fn run(&self) -> TestResult {
             match self {
                 Self::Ecc(test) => test.run(),
+                Self::Tpm(test) => test.run(),
                 Self::File(test) => test.run(),
             }
         }
@@ -91,6 +96,7 @@ pub mod test {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
                 Self::Ecc(test) => test.fmt(f),
+                Self::Tpm(test) => test.fmt(f),
                 Self::File(test) => test.fmt(f),
             }
         }
@@ -127,6 +133,7 @@ impl FromStr for Device {
             .map_err(|err| anyhow!("invalid device url \"{}\": {:?}", s, err))?;
         match url.scheme_str() {
             Some("ecc") => Ok(Self::Ecc(ecc::Device::from_url(&url)?)),
+            Some("tpm") => Ok(Self::Tpm(tpm::Device::from_url(&url)?)),
             Some("file") | None => Ok(Self::File(file::Device::from_url(&url)?)),
             _ => Err(anyhow!("invalid device url \"{}\"", s)),
         }
@@ -162,6 +169,7 @@ impl Device {
     pub fn get_info(&self) -> Result<Info> {
         let info = match self {
             Self::Ecc(device) => Info::Ecc(device.get_info()?),
+            Self::Tpm(device) => Info::Tpm(device.get_info()?),
             Self::File(device) => Info::File(device.get_info()?),
         };
         Ok(info)
@@ -170,6 +178,7 @@ impl Device {
     pub fn get_config(&self) -> Result<Config> {
         let config = match self {
             Self::Ecc(device) => Config::Ecc(device.get_config()?),
+            Self::Tpm(device) => Config::Tpm(device.get_config()?),
             Self::File(device) => Config::File(device.get_config()?),
         };
         Ok(config)
@@ -178,6 +187,7 @@ impl Device {
     pub fn get_keypair(&self, create: bool) -> Result<Keypair> {
         let keypair = match self {
             Self::Ecc(device) => device.get_keypair(create)?,
+            Self::Tpm(device) => device.get_keypair(create)?,
             Self::File(device) => device.get_keypair(create)?,
         };
         Ok(keypair)
@@ -186,6 +196,7 @@ impl Device {
     pub fn provision(&self) -> Result<Keypair> {
         let keypair = match self {
             Self::Ecc(device) => device.provision()?,
+            Self::Tpm(device) => device.provision()?,
             Self::File(device) => device.provision()?,
         };
         Ok(keypair)
@@ -197,6 +208,11 @@ impl Device {
                 .get_tests()
                 .into_iter()
                 .map(test::Test::Ecc)
+                .collect(),
+            Self::Tpm(device) => device
+                .get_tests()
+                .into_iter()
+                .map(test::Test::Tpm)
                 .collect(),
             Self::File(device) => device
                 .get_tests()
@@ -212,5 +228,6 @@ impl Device {
 #[serde(untagged)]
 pub enum Info {
     Ecc(ecc::Info),
+    Tpm(tpm::Info),
     File(file::Info),
 }
