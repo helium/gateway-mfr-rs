@@ -21,5 +21,8 @@ serde_urlencoded = "*"
 http = "0"
 bytes = "*"
 angry-purple-tiger = "0"
-helium-crypto = { git = "https://github.com/helium/helium-crypto-rs", tag = "v0.3.4", features = ["ecc608"]}
+helium-crypto = "0.6"
 
+[features]
+tpm = [ "helium-crypto/tpm" ]
+ecc608 = [ "helium-crypto/ecc608" ]

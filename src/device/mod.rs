@@ -4,15 +4,21 @@ use http::Uri;
 use serde::Serialize;
 use std::{collections::HashMap, str::FromStr};
 
+#[cfg(feature = "ecc608")]
 mod ecc;
 mod file;
+#[cfg(feature = "tpm")]
+mod tpm;
 
 /// A security device to work with. Security devices come in all forms. This
 /// abstracts them into one with a well defined interface for doing what this
 /// tool needs to do with them.
 #[derive(Debug)]
 pub enum Device {
+    #[cfg(feature = "ecc608")]
     Ecc(ecc::Device),
+    #[cfg(feature = "tpm")]
+    Tpm(tpm::Device),
     File(file::Device),
 }
 
@@ -24,21 +30,31 @@ pub struct DeviceArgs(HashMap<String, String>);
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
 pub enum Config {
+    #[cfg(feature = "ecc608")]
     Ecc(ecc::Config),
+    #[cfg(feature = "tpm")]
+    Tpm(tpm::Config),
     File(file::Config),
 }
 
 pub mod test {
-    use crate::{
-        device::{ecc, file},
-        Result,
-    };
+    use crate::Result;
+
+    #[cfg(feature = "ecc608")]
+    use crate::device::ecc;
+    use crate::device::file;
+    #[cfg(feature = "tpm")]
+    use crate::device::tpm;
+
     use serde::Serialize;
     use std::{collections::HashMap, fmt};
 
     /// Represents a single test for a given device
     pub enum Test {
+        #[cfg(feature = "ecc608")]
         Ecc(ecc::Test),
+        #[cfg(feature = "tpm")]
+        Tpm(tpm::Test),
         File(file::Test),
     }
 
@@ -81,7 +97,10 @@ pub mod test {
     impl Test {
         pub fn run(&self) -> TestResult {
             match self {
+                #[cfg(feature = "ecc608")]
                 Self::Ecc(test) => test.run(),
+                #[cfg(feature = "tpm")]
+                Self::Tpm(test) => test.run(),
                 Self::File(test) => test.run(),
             }
         }
@@ -90,7 +109,10 @@ pub mod test {
     impl fmt::Display for Test {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
+                #[cfg(feature = "ecc608")]
                 Self::Ecc(test) => test.fmt(f),
+                #[cfg(feature = "tpm")]
+                Self::Tpm(test) => test.fmt(f),
                 Self::File(test) => test.fmt(f),
             }
         }
@@ -126,7 +148,10 @@ impl FromStr for Device {
             .parse()
             .map_err(|err| anyhow!("invalid device url \"{}\": {:?}", s, err))?;
         match url.scheme_str() {
+            #[cfg(feature = "ecc608")]
             Some("ecc") => Ok(Self::Ecc(ecc::Device::from_url(&url)?)),
+            #[cfg(feature = "tpm")]
+            Some("tpm") => Ok(Self::Tpm(tpm::Device::from_url(&url)?)),
             Some("file") | None => Ok(Self::File(file::Device::from_url(&url)?)),
             _ => Err(anyhow!("invalid device url \"{}\"", s)),
         }
@@ -161,7 +186,10 @@ impl DeviceArgs {
 impl Device {
     pub fn get_info(&self) -> Result<Info> {
         let info = match self {
+            #[cfg(feature = "ecc608")]
             Self::Ecc(device) => Info::Ecc(device.get_info()?),
+            #[cfg(feature = "tpm")]
+            Self::Tpm(device) => Info::Tpm(device.get_info()?),
             Self::File(device) => Info::File(device.get_info()?),
         };
         Ok(info)
@@ -169,7 +197,10 @@ impl Device {
 
     pub fn get_config(&self) -> Result<Config> {
         let config = match self {
+            #[cfg(feature = "ecc608")]
             Self::Ecc(device) => Config::Ecc(device.get_config()?),
+            #[cfg(feature = "tpm")]
+            Self::Tpm(device) => Config::Tpm(device.get_config()?),
             Self::File(device) => Config::File(device.get_config()?),
         };
         Ok(config)
@@ -177,7 +208,10 @@ impl Device {
 
     pub fn get_keypair(&self, create: bool) -> Result<Keypair> {
         let keypair = match self {
+            #[cfg(feature = "ecc608")]
             Self::Ecc(device) => device.get_keypair(create)?,
+            #[cfg(feature = "tpm")]
+            Self::Tpm(device) => device.get_keypair(create)?,
             Self::File(device) => device.get_keypair(create)?,
         };
         Ok(keypair)
@@ -185,7 +219,10 @@ impl Device {
 
     pub fn provision(&self) -> Result<Keypair> {
         let keypair = match self {
+            #[cfg(feature = "ecc608")]
             Self::Ecc(device) => device.provision()?,
+            #[cfg(feature = "tpm")]
+            Self::Tpm(device) => device.provision()?,
             Self::File(device) => device.provision()?,
         };
         Ok(keypair)
@@ -193,10 +230,17 @@ impl Device {
 
     pub fn get_tests(&self) -> Vec<test::Test> {
         match self {
+            #[cfg(feature = "ecc608")]
             Self::Ecc(device) => device
                 .get_tests()
                 .into_iter()
                 .map(test::Test::Ecc)
+                .collect(),
+            #[cfg(feature = "tpm")]
+            Self::Tpm(device) => device
+                .get_tests()
+                .into_iter()
+                .map(test::Test::Tpm)
                 .collect(),
             Self::File(device) => device
                 .get_tests()
@@ -211,6 +255,9 @@ impl Device {
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
 pub enum Info {
+    #[cfg(feature = "ecc608")]
     Ecc(ecc::Info),
+    #[cfg(feature = "tpm")]
+    Tpm(tpm::Info),
     File(file::Info),
 }

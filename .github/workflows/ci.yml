@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt-get install -y libtss2-dev
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
@@ -32,7 +36,7 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: -- -Dclippy::all
+          args: --all-features -- -Dclippy::all
 
   package:
     name: package
@@ -44,17 +48,28 @@ jobs:
           - mips-unknown-linux-musl
           - aarch64-unknown-linux-gnu
           - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
           - armv7-unknown-linux-musleabihf
           - armv7-unknown-linux-gnueabihf
           - mips-unknown-linux-musl
           - arm-unknown-linux-gnueabihf
           - armv5te-unknown-linux-musleabi
+        feature:
+          - ecc608
+        include:
+          - target: x86_64-unknown-linux-gnu
+            feature: tpm
+          - target: x86_64-unknown-linux-musl
+            feature: tpm
     steps:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
       - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang
 
       - name: install cross
         uses: jaxxstorm/action-install-gh-release@release/v1-alpha
@@ -66,12 +81,12 @@ jobs:
           repo: rust-embedded/cross
 
       - name: build target
-        run: cross build --target ${{ matrix.target }} --release
+        run: cross build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
 
       - name: name release
         if: startsWith(github.ref, 'refs/tags')
         id: vars
-        run: echo ::set-output name=NAME::gateway-mfr-${GITHUB_REF#refs/*/}-${{ matrix.target }}
+        run: echo ::set-output name=NAME::gateway-mfr-${GITHUB_REF#refs/*/}-${{ matrix.target }}-${{ matrix.feature }}
 
       - name: prepare release
         if: startsWith(github.ref, 'refs/tags/')
@@ -79,8 +94,7 @@ jobs:
           NAME: ${{ steps.vars.outputs.NAME }}
         run: |
           tar -zcv -C target/${{ matrix.target }}/release -f $NAME.tar.gz gateway_mfr
-          sha256sum -b --tag $NAME.tar.gz > $NAME.checksum
-
+          sha256sum -b --tag $NAME.tar.gz > $NAME.checksurustup
       - name: push release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
