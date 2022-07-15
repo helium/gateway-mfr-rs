@@ -237,7 +237,7 @@ fn check_zone_locked(zone: &ecc608::Zone) -> TestResult {
     }
 }
 
-fn check<T>(name: &'static str, expected: T, found: T) -> (&'static str, test::TestOutcome)
+fn check<T>(name: &'static str, found: T, expected: T) -> (&'static str, test::TestOutcome)
 where
     T: fmt::Display + PartialEq,
 {
