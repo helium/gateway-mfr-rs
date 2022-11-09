@@ -249,6 +249,13 @@ where
     (name, outcome)
 }
 
+fn check_any<T>(name: &'static str, found: T) -> (&'static str, test::TestOutcome)
+where
+    T: fmt::Display + PartialEq,
+{
+    (name, test::pass(found))
+}
+
 fn check_slot_config(slot: u8) -> TestResult {
     let config = with_ecc(|ecc| ecc.get_slot_config(slot))?;
     let outcomes = [
@@ -260,10 +267,9 @@ fn check_slot_config(slot: u8) -> TestResult {
             config.read_key().external_signatures(),
             true,
         ),
-        check(
+        check_any(
             "internal_signatures",
             config.read_key().internal_signatures(),
-            true,
         ),
         check("ecdh_operation", config.read_key().ecdh_operation(), true),
     ]
@@ -289,7 +295,7 @@ fn check_key_config(slot: u8) -> TestResult {
         check("x509_index", config.x509_index(), 0),
         check("private", config.private(), true),
         check("pub_info", config.pub_info(), true),
-        check("req_random", config.req_random(), false),
+        check_any("req_random", config.req_random()),
         check("req_auth", config.req_auth(), false),
         check("lockable", config.lockable(), true),
         check_key_config_type(config.key_type()),
