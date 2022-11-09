@@ -41,7 +41,7 @@ impl Device {
     pub fn get_keypair(&self, create: bool) -> Result<Keypair> {
         if !self.path.exists() || create {
             let keypair = Keypair::generate(KeyTag::default(), &mut OsRng);
-            fs::write(&self.path, &keypair.to_vec())?;
+            fs::write(&self.path, keypair.to_vec())?;
         }
         load_keypair(&self.path)
     }
