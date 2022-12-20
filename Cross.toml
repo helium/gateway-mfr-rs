@@ -3,10 +3,11 @@ volumes = [
     "BUILD_DIR",
 ]
 
-# [target.x86_64-unknown-linux-gnu]
-# pre-build = [
-#     "sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang"
-# ]
+[target.x86_64-unknown-linux-gnu]
+pre-build = [                                  # additional commands to run prior to building the package
+    "dpkg --add-architecture $CROSS_DEB_ARCH", 
+    "apt-get update && apt-get --assume-yes install libtss2-dev:$CROSS_DEB_ARCH llvm-dev:$CROSS_DEB_ARCH libclang-dev:$CROSS_DEB_ARCH clang:$CROSS_DEB_ARCH"
+]  
 
 [target.x86_64-unknown-linux-gnu.env]
 passthrough = [
@@ -14,10 +15,11 @@ passthrough = [
     "LIBCLANG_PATH",
 ]
 
-# [target.x86_64-unknown-linux-musl]
-# pre-build = [
-#     "sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang"
-# ]
+[target.x86_64-unknown-linux-musl]
+pre-build = [                                  # additional commands to run prior to building the package
+    "dpkg --add-architecture $CROSS_DEB_ARCH", 
+    "apt-get update && apt-get --assume-yes install libtss2-dev:$CROSS_DEB_ARCH llvm-dev:$CROSS_DEB_ARCH libclang-dev:$CROSS_DEB_ARCH clang:$CROSS_DEB_ARCH"
+]  
 
 [target.x86_64-unknown-linux-musl.env]
 passthrough = [
