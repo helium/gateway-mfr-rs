@@ -3,10 +3,10 @@ volumes = [
     "BUILD_DIR",
 ]
 
-[target.x86_64-unknown-linux-gnu]
-pre-build = [
-    "sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang"
-]
+# [target.x86_64-unknown-linux-gnu]
+# pre-build = [
+#     "sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang"
+# ]
 
 [target.x86_64-unknown-linux-gnu.env]
 passthrough = [
@@ -14,10 +14,10 @@ passthrough = [
     "LIBCLANG_PATH",
 ]
 
-[target.x86_64-unknown-linux-musl]
-pre-build = [
-    "sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang"
-]
+# [target.x86_64-unknown-linux-musl]
+# pre-build = [
+#     "sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang"
+# ]
 
 [target.x86_64-unknown-linux-musl.env]
 passthrough = [
