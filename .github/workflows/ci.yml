@@ -44,16 +44,16 @@ jobs:
     strategy:
       matrix:
         target:
-          - mipsel-unknown-linux-musl
-          - mips-unknown-linux-musl
           - aarch64-unknown-linux-gnu
-          - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
-          - armv7-unknown-linux-musleabihf
-          - armv7-unknown-linux-gnueabihf
-          - mips-unknown-linux-musl
           - arm-unknown-linux-gnueabihf
           - armv5te-unknown-linux-musleabi
+          - armv7-unknown-linux-gnueabihf
+          - armv7-unknown-linux-musleabihf
+          - mips-unknown-linux-musl
+          - mips-unknown-linux-musl
+          - mipsel-unknown-linux-musl
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
         feature:
           - ecc608
         include:
@@ -69,9 +69,11 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install dependencies
+        if: matrix.feature == 'tpm'
         run: sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang
 
       - name: install cross
+        if: matrix.feature != 'tpm'
         uses: jaxxstorm/action-install-gh-release@release/v1-alpha
         env:
           ## Allow cross install into PATH
@@ -80,7 +82,14 @@ jobs:
         with:
           repo: rust-embedded/cross
 
-      - name: build target
+      - name: build target (native)
+        if: matrix.feature == 'tpm'
+        run: |
+          rustup target add ${{ matrix.target }}
+          cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
+
+      - name: build target (cross)
+        if: matrix.feature != 'tpm'
         run: cross build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
 
       - name: name release
@@ -94,7 +103,8 @@ jobs:
           NAME: ${{ steps.vars.outputs.NAME }}
         run: |
           tar -zcv -C target/${{ matrix.target }}/release -f $NAME.tar.gz gateway_mfr
-          sha256sum -b --tag $NAME.tar.gz > $NAME.checksurustup
+          sha256sum -b --tag $NAME.tar.gz > $NAME.checksum
+
       - name: push release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
