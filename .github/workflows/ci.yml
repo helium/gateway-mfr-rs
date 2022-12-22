@@ -95,7 +95,7 @@ jobs:
       - name: name release
         if: startsWith(github.ref, 'refs/tags')
         id: vars
-        run: echo ::set-output name=NAME::gateway-mfr-${GITHUB_REF#refs/*/}-${{ matrix.target }}-${{ matrix.feature }}
+        run: echo "name=NAME::gateway-mfr-${GITHUB_REF#refs/*/}-${{ matrix.target }}-${{ matrix.feature }}" >> $GITHUB_OUTPUT
 
       - name: prepare release
         if: startsWith(github.ref, 'refs/tags/')
