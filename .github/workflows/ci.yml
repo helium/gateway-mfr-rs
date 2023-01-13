@@ -92,12 +92,12 @@ jobs:
       - name: name release
         if: startsWith(github.ref, 'refs/tags')
         id: vars
-        run: echo "name=NAME::gateway-mfr-${GITHUB_REF#refs/*/}-${{ matrix.target }}-${{ matrix.feature }}" >> $GITHUB_OUTPUT
+        run: echo "NAME=gateway-mfr-${GITHUB_REF#refs/*/}-${{ matrix.target }}-${{ matrix.feature }}" >> $GITHUB_ENV
 
       - name: prepare release
         if: startsWith(github.ref, 'refs/tags/')
         env:
-          NAME: ${{ steps.vars.outputs.NAME }}
+          NAME: ${{ env.NAME }}
         run: |
           tar -zcv -C target/${{ matrix.target }}/release -f $NAME.tar.gz gateway_mfr
           sha256sum -b --tag $NAME.tar.gz > $NAME.checksum
@@ -105,8 +105,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         env:
+          NAME: ${{ env.NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            ${{ steps.vars.outputs.NAME }}.tar.gz
-            ${{ steps.vars.outputs.NAME }}.checksum
+            $NAME.tar.gz
+            $NAME.checksum
