@@ -12,20 +12,16 @@ jobs:
     name: hygiene
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
 
       - name: Install dependencies
         run: sudo apt-get install -y libtss2-dev
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          default: true
-          override: true
-          components: clippy, rustfmt
-
       - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.5.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ github.token }}
 
@@ -33,10 +29,7 @@ jobs:
         run: cargo fmt  -- --check
 
       - name: Clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features -- -Dclippy::all
+        run: cargo clippy --all-features -- -Dclippy::all -D warnings
 
   package:
     name: package
@@ -59,11 +52,8 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             feature: tpm
     steps:
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
         if: matrix.feature == 'tpm'
@@ -71,7 +61,7 @@ jobs:
 
       - name: install cross
         if: matrix.feature != 'tpm'
-        uses: jaxxstorm/action-install-gh-release@release/v1-alpha
+        uses: jaxxstorm/action-install-gh-release@v1.9.0
         env:
           ## Allow cross install into PATH
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
