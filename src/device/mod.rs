@@ -159,6 +159,7 @@ impl FromStr for Device {
 }
 
 impl DeviceArgs {
+    #[cfg(feature = "ecc608")]
     pub(crate) fn from_uri(url: &Uri) -> Result<Self> {
         let args = url
             .query()
