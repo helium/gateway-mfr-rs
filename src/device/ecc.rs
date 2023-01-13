@@ -160,7 +160,7 @@ pub fn serialize_bytes<S>(bytes: &Bytes, s: S) -> std::result::Result<S::Ok, S::
 where
     S: Serializer,
 {
-    s.serialize_str(&format!("{:#02x}", bytes))
+    s.serialize_str(&format!("{bytes:#02x}"))
 }
 
 pub fn serialize_zone<S>(zone: &ecc608::Zone, s: S) -> std::result::Result<S::Ok, S::Error>
@@ -194,13 +194,13 @@ impl fmt::Display for Test {
                     ecc608::Zone::Config => "config",
                     ecc608::Zone::Data => "data",
                 };
-                f.write_fmt(format_args!("zone_locked({})", zone_str))
+                f.write_fmt(format_args!("zone_locked({zone_str})"))
             }
-            Self::SlotConfig { slot, .. } => f.write_fmt(format_args!("slot_config({})", slot)),
-            Self::KeyConfig { slot, .. } => f.write_fmt(format_args!("key_config({})", slot)),
-            Self::MinerKey(slot) => f.write_fmt(format_args!("miner_key({})", slot)),
-            Self::Sign(slot) => f.write_fmt(format_args!("sign({})", slot)),
-            Self::Ecdh(slot) => f.write_fmt(format_args!("ecdh({})", slot)),
+            Self::SlotConfig { slot, .. } => f.write_fmt(format_args!("slot_config({slot})")),
+            Self::KeyConfig { slot, .. } => f.write_fmt(format_args!("key_config({slot})")),
+            Self::MinerKey(slot) => f.write_fmt(format_args!("miner_key({slot})")),
+            Self::Sign(slot) => f.write_fmt(format_args!("sign({slot})")),
+            Self::Ecdh(slot) => f.write_fmt(format_args!("ecdh({slot})")),
         }
     }
 }

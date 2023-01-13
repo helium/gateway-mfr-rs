@@ -67,5 +67,5 @@ fn test_result_to_json(result: &TestResult) -> (&'static str, TestOutcome) {
     result
         .as_ref()
         .map(|outcome| ("checks", outcome.clone()))
-        .unwrap_or_else(|err| ("error", test::fail(format!("{:?}", err))))
+        .unwrap_or_else(|err| ("error", test::fail(format!("{err:?}"))))
 }

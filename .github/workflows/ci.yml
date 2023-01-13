@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt-get install -y libtss2-dev
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
@@ -32,7 +36,7 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: -- -Dclippy::all
+          args: --all-features -- -Dclippy::all
 
   package:
     name: package
@@ -40,15 +44,20 @@ jobs:
     strategy:
       matrix:
         target:
-          - mipsel-unknown-linux-musl
-          - mips-unknown-linux-musl
           - aarch64-unknown-linux-gnu
-          - x86_64-unknown-linux-gnu
-          - armv7-unknown-linux-musleabihf
-          - armv7-unknown-linux-gnueabihf
-          - mips-unknown-linux-musl
           - arm-unknown-linux-gnueabihf
           - armv5te-unknown-linux-musleabi
+          - armv7-unknown-linux-gnueabihf
+          - armv7-unknown-linux-musleabihf
+          - mips-unknown-linux-musl
+          - mips-unknown-linux-musl
+          - mipsel-unknown-linux-musl
+          - x86_64-unknown-linux-gnu
+        feature:
+          - ecc608
+        include:
+          - target: x86_64-unknown-linux-gnu
+            feature: tpm
     steps:
       - uses: actions-rs/toolchain@v1
         with:
@@ -56,7 +65,12 @@ jobs:
           override: true
       - uses: actions/checkout@v2
 
+      - name: Install dependencies
+        if: matrix.feature == 'tpm'
+        run: sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang
+
       - name: install cross
+        if: matrix.feature != 'tpm'
         uses: jaxxstorm/action-install-gh-release@release/v1-alpha
         env:
           ## Allow cross install into PATH
@@ -65,13 +79,20 @@ jobs:
         with:
           repo: rust-embedded/cross
 
-      - name: build target
-        run: cross build --target ${{ matrix.target }} --release
+      - name: build target (native)
+        if: matrix.feature == 'tpm'
+        run: |
+          rustup target add ${{ matrix.target }}
+          cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
+
+      - name: build target (cross)
+        if: matrix.feature != 'tpm'
+        run: cross build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
 
       - name: name release
         if: startsWith(github.ref, 'refs/tags')
         id: vars
-        run: echo ::set-output name=NAME::gateway-mfr-${GITHUB_REF#refs/*/}-${{ matrix.target }}
+        run: echo "name=NAME::gateway-mfr-${GITHUB_REF#refs/*/}-${{ matrix.target }}-${{ matrix.feature }}" >> $GITHUB_OUTPUT
 
       - name: prepare release
         if: startsWith(github.ref, 'refs/tags/')
@@ -80,7 +101,6 @@ jobs:
         run: |
           tar -zcv -C target/${{ matrix.target }}/release -f $NAME.tar.gz gateway_mfr
           sha256sum -b --tag $NAME.tar.gz > $NAME.checksum
-
       - name: push release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
