@@ -379,7 +379,7 @@ dependencies = [
 
 [[package]]
 name = "gateway-mfr"
-version = "0.3.1-beta.1"
+version = "0.3.1"
 dependencies = [
  "angry-purple-tiger",
  "anyhow",
