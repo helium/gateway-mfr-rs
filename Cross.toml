@@ -2,3 +2,7 @@
 volumes = [
     "BUILD_DIR",
 ]
+
+[target.x86_64-unknown-linux-gnu]
+dockerfile = "./.github/cross-docker/Dockerfile-cross-debian-11"
+pre-build = ["apt-get install -y libtss2-dev llvm-dev libclang-dev clang"]
