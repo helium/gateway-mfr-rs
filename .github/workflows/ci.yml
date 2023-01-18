@@ -60,7 +60,6 @@ jobs:
         run: sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang
 
       - name: install cross
-        if: matrix.feature != 'tpm'
         uses: jaxxstorm/action-install-gh-release@v1.9.0
         env:
           ## Allow cross install into PATH
@@ -69,14 +68,7 @@ jobs:
         with:
           repo: rust-embedded/cross
 
-      - name: build target (native)
-        if: matrix.feature == 'tpm'
-        run: |
-          rustup target add ${{ matrix.target }}
-          cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
-
-      - name: build target (cross)
-        if: matrix.feature != 'tpm'
+      - name: build target
         run: cross build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
 
       - name: name release
