@@ -10,7 +10,7 @@ use crate::{
     Result,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Device {
     /// TPM key path
     pub path: String,

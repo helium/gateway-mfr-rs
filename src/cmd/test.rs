@@ -8,10 +8,9 @@ use crate::{
 };
 use serde_json::json;
 use std::collections::HashMap;
-use structopt::StructOpt;
 
 /// Read the slot configuration for a given slot
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Args)]
 pub struct Cmd {}
 
 impl Cmd {

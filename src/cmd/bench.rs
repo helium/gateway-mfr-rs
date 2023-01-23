@@ -3,16 +3,15 @@ use helium_crypto::{Keypair, Sign};
 use rand::{rngs::OsRng, RngCore};
 use serde_json::json;
 use std::time::{Duration, Instant};
-use structopt::StructOpt;
 
 /// Run a benchmark test.
 ///
 /// This reports number of signing operations per second a security part can
 /// handle
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Args)]
 pub struct Cmd {
     /// Number of iterations to use for test
-    #[structopt(long, short, default_value = "100")]
+    #[arg(long, short, default_value_t = 100)]
     pub iterations: u32,
 }
 

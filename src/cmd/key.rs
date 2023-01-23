@@ -2,17 +2,13 @@ use crate::{cmd::print_json, Device, Result};
 use angry_purple_tiger::AnimalName;
 use helium_crypto::Keypair;
 use serde_json::json;
-use structopt::StructOpt;
 
-/// Prints public key information for a given slot.
-///
-/// WARNING: Using the generate option will generate a new keypair in the given
-/// slot.
-#[derive(Debug, StructOpt)]
+/// Prints public key information from the security device
+#[derive(Debug, clap::Args)]
 pub struct Cmd {
     /// Generate a new private key in the slot. WARNING: This will overwrite the
-    /// existing key in the slot
-    #[structopt(long)]
+    /// existing private key on the security device.
+    #[arg(long)]
     pub generate: bool,
 }
 
