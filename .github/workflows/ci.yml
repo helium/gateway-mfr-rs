@@ -45,22 +45,14 @@ jobs:
           - mips-unknown-linux-musl
           - mips-unknown-linux-musl
           - mipsel-unknown-linux-musl
-          - x86_64-unknown-linux-gnu
-        feature:
-          - ecc608
-        include:
-          - target: x86_64-unknown-linux-gnu
-            feature: tpm
+          - x86_64-tpm-debian-gnu
+
     steps:
       - uses: actions/checkout@v3
+      - uses: davidB/rust-cargo-make@v1
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install dependencies
-        if: matrix.feature == 'tpm'
-        run: sudo apt-get install -y libtss2-dev llvm-dev libclang-dev clang
-
       - name: install cross
-        if: matrix.feature != 'tpm'
         uses: jaxxstorm/action-install-gh-release@v1.9.0
         env:
           ## Allow cross install into PATH
@@ -69,15 +61,8 @@ jobs:
         with:
           repo: rust-embedded/cross
 
-      - name: build target (native)
-        if: matrix.feature == 'tpm'
-        run: |
-          rustup target add ${{ matrix.target }}
-          cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
-
-      - name: build target (cross)
-        if: matrix.feature != 'tpm'
-        run: cross build --target ${{ matrix.target }} --features ${{ matrix.feature }} --release
+      - name: build target
+        run: cargo make --profile ${{ matrix.target }} build
 
       - name: name release
         if: startsWith(github.ref, 'refs/tags')
