@@ -45,6 +45,10 @@ address the specific system and entry used for key material and provisioning.
 
    - Download a pre-built binary from the
      [releases](https://github.com/helium/gateway-mfr-rs/releases/latest) page.
+     Note that the `unknown` target systems are all `ecc608` based targets. To
+     find the right target binary for a given platform, look at the [supported
+     targets](https://github.com/helium/gateway-rs#supported-targets) for the
+     maker name and associated target.
 
    - Build the application. This will involve [installing
      rust](https://www.rust-lang.org/learn/get-started) on the host system and
