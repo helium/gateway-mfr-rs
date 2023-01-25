@@ -1,8 +1,7 @@
 use crate::{cmd::print_json, Device, Result};
-use structopt::StructOpt;
 
-/// Gets the zone, slot or key config for a given ecc slot
-#[derive(Debug, StructOpt)]
+/// Gets the security device configuration
+#[derive(Debug, clap::Args)]
 pub struct Cmd {}
 
 impl Cmd {

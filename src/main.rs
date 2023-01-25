@@ -1,18 +1,28 @@
+use clap::Parser;
 use gateway_mfr::{cmd, Device, Result};
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = env!("CARGO_BIN_NAME"), version = env!("CARGO_PKG_VERSION"), about = "Gateway Manufacturing ")]
+#[derive(Debug, Parser)]
+#[command(version = env!("CARGO_PKG_VERSION"))]
+#[command(name = env!("CARGO_BIN_NAME"))]
 pub struct Cli {
-    /// The security device to use
-    #[structopt(long, default_value = "ecc://i2c-1")]
+    /// The security device to use.
+    ///
+    /// The URL for the security device is dependent on the device type being
+    /// used.
+    ///
+    /// Examples:
+    ///
+    /// ecc608 - "ecc://i2c-1", "ecc://i2c-1:96?slot=0"
+    /// file - "file:///etc/keypair.bin"\n
+    /// tpm - "tpm://tpm/<key_path>"
+    #[arg(long, verbatim_doc_comment)]
     device: Device,
 
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     cmd: Cmd,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Subcommand)]
 pub enum Cmd {
     Info(cmd::info::Cmd),
     Key(cmd::key::Cmd),
@@ -23,7 +33,7 @@ pub enum Cmd {
 }
 
 pub fn main() -> Result {
-    let cli = Cli::from_args();
+    let cli = Cli::parse();
     cli.cmd.run(&cli.device)
 }
 

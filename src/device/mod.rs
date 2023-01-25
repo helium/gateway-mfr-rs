@@ -13,7 +13,7 @@ mod tpm;
 /// A security device to work with. Security devices come in all forms. This
 /// abstracts them into one with a well defined interface for doing what this
 /// tool needs to do with them.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Device {
     #[cfg(feature = "ecc608")]
     Ecc(ecc::Device),
@@ -146,14 +146,14 @@ impl FromStr for Device {
     fn from_str(s: &str) -> Result<Self> {
         let url: Uri = s
             .parse()
-            .map_err(|err| anyhow!("invalid device url \"{}\": {:?}", s, err))?;
+            .map_err(|err| anyhow!("invalid device url \"{s}\": {err:?}"))?;
         match url.scheme_str() {
             #[cfg(feature = "ecc608")]
             Some("ecc") => Ok(Self::Ecc(ecc::Device::from_url(&url)?)),
             #[cfg(feature = "tpm")]
             Some("tpm") => Ok(Self::Tpm(tpm::Device::from_url(&url)?)),
             Some("file") | None => Ok(Self::File(file::Device::from_url(&url)?)),
-            _ => Err(anyhow!("invalid device url \"{}\"", s)),
+            _ => Err(anyhow!("invalid device url \"{s}\"")),
         }
     }
 }

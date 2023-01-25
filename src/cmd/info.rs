@@ -1,8 +1,7 @@
 use crate::{cmd::print_json, device::Device, Result};
-use structopt::StructOpt;
 
 /// Get ecc chip information
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Args)]
 pub struct Cmd {}
 
 impl Cmd {
