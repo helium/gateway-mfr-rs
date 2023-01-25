@@ -46,19 +46,27 @@ address the specific system and entry used for key material and provisioning.
    - Download a pre-built binary from the
      [releases](https://github.com/helium/gateway-mfr-rs/releases/latest) page.
 
-   - Build the application. This will involve
-     [installing rust](https://www.rust-lang.org/learn/get-started) on the host
-     system and cross compiling for running the application on the target
-     hardware. [Install cross](https://github.com/rust-embedded/cross) make
-     cross compiling to targets easier.
+   - Build the application. This will involve [installing
+     rust](https://www.rust-lang.org/learn/get-started) on the host system and
+     cross compiling for running the application on the target hardware.
+     [Install cross](https://github.com/rust-embedded/cross) make cross
+     compiling to targets easier. Also install
+     [cargo-make](https://github.com/sagiegurari/cargo-make) to set up for
+     packaging and specific profile support.
 
      For example to compile for Raspbery-Pi's aarch64 architecture:
 
      ```shell
-     cross build --target aarch64-unknown-linux-musl --release
+     cargo make --profile aarch64-unknown-linux-musl --release
      ```
 
      The resulting cross compiled binary will be located in `./target/ aarch64-unknown-linux-musl/release/gateway_mfr`
+
+     **NOTE**: For some profiles the resulting target will not be in the profile
+     name but under the target system triplet that was used to build the target.
+     For example, the `x86_64-tpm-debian-gnu` uses the `x86_64-unkown-linux-gnu`
+     target but a custom Docker file to build using Debian since that is where
+     `tpm` is supported.
 
 2. As part of the provisioning/QA steps start and provision the security part:
 
