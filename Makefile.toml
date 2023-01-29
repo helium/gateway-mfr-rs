@@ -26,7 +26,7 @@ args = [
 description = "Package application"
 workspace = false
 condition = { env_set = ["CARGO_MAKE_PROFILE", "CROSS_TARGET"]}
-env = { PKG_NAME = "gateway-mfr-${CARGO_MAKE_CRATE_VERSION}-${CARGO_MAKE_PROFILE}" }
+env = { PKG_NAME = "gateway-mfr-v${CARGO_MAKE_CRATE_VERSION}-${CARGO_MAKE_PROFILE}" }
 script = '''
   ${TAR} -zcv -C target/${CROSS_TARGET}/release -f ${PKG_NAME}.tar.gz gateway_mfr
   sha256sum --tag ${PKG_NAME}.tar.gz > ${PKG_NAME}.checksum
