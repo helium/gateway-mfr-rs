@@ -113,7 +113,7 @@ address the specific system and entry used for key material and provisioning.
    ```
 
    This will run a number of signing iterations (default 100) and report the
-   average signing time and the number of signing operatins per second.
+   average signing time and the number of signing operations per second.
 
    Helium Hotspots using a full miner will need 6-7 or better signing operations
    per second while light/dataonly hotspots should be able to operate with
