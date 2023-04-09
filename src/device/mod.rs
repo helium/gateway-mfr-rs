@@ -25,7 +25,7 @@ pub enum Device {
 pub struct DeviceArgs(HashMap<String, String>);
 
 /// Represents the configuration state for the given security device. This
-/// information should include enpugh detail to convey that the security device
+/// information should include enough detail to convey that the security device
 /// is "locked" so key material can be written to it.
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
