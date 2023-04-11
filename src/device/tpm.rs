@@ -17,7 +17,7 @@ pub struct Device {
 }
 
 impl Device {
-    /// Parses an tpm device url of the form `tpm://tpm/<key_path>`,
+    /// Parses a tpm device url of the form `tpm://tpm/<key_path>`,
     /// where <key_path> is the path to TPM KEY
     pub fn from_url(url: &Uri) -> Result<Self> {
         let path = url.path();

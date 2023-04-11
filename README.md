@@ -36,6 +36,12 @@ address the `/dev/i2c-1` linux device, using the bus address`96` and slot `0` on
 the ECC device. This is also the default URL for the application, and must be
 provided for ECC parts with a different bus address or slot.
 
+If you are passing an additional command such as those decribed in the [usage section](#usage) below those commands need to come after the device address. For example:
+
+```
+gateway_mfr --device ecc://i2c-1:96?slot=0 key
+```
+
 Each security part will have it's own URL scheme and host/path arguments to
 address the specific system and entry used for key material and provisioning.
 
@@ -123,3 +129,37 @@ The security part is now configured for production use. The production image,
 including the Helium miner can be installed and started. If configured correctly
 the miner software will use the configured key in slot 0 as the miner key and
 use the security part for secured transaction signing.
+
+The full suite of options can be found by running the help command:
+
+```shell
+gateway_mfr help
+```
+
+This will give you an output like the following where you can find all of the options listed:
+
+```
+gateway_mfr 0.3.2
+Gateway Manufacturing 
+
+USAGE:
+    gateway_mfr [OPTIONS] <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+        --device <device>    The security device to use [default: ecc://i2c-1]
+
+SUBCOMMANDS:
+    bench        Run a benchmark test
+    config       Gets the zone, slot or key config for a given ecc slot
+    help         Prints this message or the help of the given subcommand(s)
+    info         Get ecc chip information
+    key          Prints public key information for a given slot
+    provision    Configures the ECC for gateway/miner use. This includes configuring slot and key configs for †he
+                 given slot, locking the data and config zone and generating an ecc compact key in the configured
+                 slot
+    test         Read the slot configuration for a given slot
+```
