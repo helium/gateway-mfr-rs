@@ -24,5 +24,6 @@ angry-purple-tiger = "0"
 helium-crypto = "0.6"
 
 [features]
+default = ["ecc608"]
 tpm = [ "helium-crypto/tpm" ]
 ecc608 = [ "helium-crypto/ecc608" ]
