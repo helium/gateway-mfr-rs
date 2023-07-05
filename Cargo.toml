@@ -21,9 +21,10 @@ serde_urlencoded = "*"
 http = "0"
 bytes = "*"
 angry-purple-tiger = "0"
-helium-crypto = "0.6"
+helium-crypto = "0.7"
 
 [features]
 default = ["ecc608"]
 tpm = [ "helium-crypto/tpm" ]
 ecc608 = [ "helium-crypto/ecc608" ]
+nova-tz = [ "helium-crypto/nova-tz" ]

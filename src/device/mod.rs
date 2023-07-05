@@ -7,6 +7,8 @@ use std::{collections::HashMap, str::FromStr};
 #[cfg(feature = "ecc608")]
 mod ecc;
 mod file;
+#[cfg(feature = "nova-tz")]
+mod nova_tz;
 #[cfg(feature = "tpm")]
 mod tpm;
 
@@ -19,6 +21,8 @@ pub enum Device {
     Ecc(ecc::Device),
     #[cfg(feature = "tpm")]
     Tpm(tpm::Device),
+    #[cfg(feature = "nova-tz")]
+    TrustZone(nova_tz::Device),
     File(file::Device),
 }
 
@@ -34,6 +38,8 @@ pub enum Config {
     Ecc(ecc::Config),
     #[cfg(feature = "tpm")]
     Tpm(tpm::Config),
+    #[cfg(feature = "nova-tz")]
+    TrustZone(nova_tz::Config),
     File(file::Config),
 }
 
@@ -43,6 +49,8 @@ pub mod test {
     #[cfg(feature = "ecc608")]
     use crate::device::ecc;
     use crate::device::file;
+    #[cfg(feature = "nova-tz")]
+    use crate::device::nova_tz;
     #[cfg(feature = "tpm")]
     use crate::device::tpm;
 
@@ -55,6 +63,8 @@ pub mod test {
         Ecc(ecc::Test),
         #[cfg(feature = "tpm")]
         Tpm(tpm::Test),
+        #[cfg(feature = "nova-tz")]
+        TrustZone(nova_tz::Test),
         File(file::Test),
     }
 
@@ -101,6 +111,8 @@ pub mod test {
                 Self::Ecc(test) => test.run(),
                 #[cfg(feature = "tpm")]
                 Self::Tpm(test) => test.run(),
+                #[cfg(feature = "nova-tz")]
+                Self::TrustZone(test) => test.run(),
                 Self::File(test) => test.run(),
             }
         }
@@ -113,6 +125,8 @@ pub mod test {
                 Self::Ecc(test) => test.fmt(f),
                 #[cfg(feature = "tpm")]
                 Self::Tpm(test) => test.fmt(f),
+                #[cfg(feature = "nova-tz")]
+                Self::TrustZone(test) => test.fmt(f),
                 Self::File(test) => test.fmt(f),
             }
         }
@@ -152,6 +166,8 @@ impl FromStr for Device {
             Some("ecc") => Ok(Self::Ecc(ecc::Device::from_url(&url)?)),
             #[cfg(feature = "tpm")]
             Some("tpm") => Ok(Self::Tpm(tpm::Device::from_url(&url)?)),
+            #[cfg(feature = "nova-tz")]
+            Some("nova-tz") => Ok(Self::TrustZone(nova_tz::Device::from_url(&url)?)),
             Some("file") | None => Ok(Self::File(file::Device::from_url(&url)?)),
             _ => Err(anyhow!("invalid device url \"{s}\"")),
         }
@@ -191,6 +207,8 @@ impl Device {
             Self::Ecc(device) => Info::Ecc(device.get_info()?),
             #[cfg(feature = "tpm")]
             Self::Tpm(device) => Info::Tpm(device.get_info()?),
+            #[cfg(feature = "nova-tz")]
+            Self::TrustZone(device) => Info::TrustZone(device.get_info()?),
             Self::File(device) => Info::File(device.get_info()?),
         };
         Ok(info)
@@ -202,6 +220,8 @@ impl Device {
             Self::Ecc(device) => Config::Ecc(device.get_config()?),
             #[cfg(feature = "tpm")]
             Self::Tpm(device) => Config::Tpm(device.get_config()?),
+            #[cfg(feature = "nova-tz")]
+            Self::TrustZone(device) => Config::TrustZone(device.get_config()?),
             Self::File(device) => Config::File(device.get_config()?),
         };
         Ok(config)
@@ -213,6 +233,8 @@ impl Device {
             Self::Ecc(device) => device.get_keypair(create)?,
             #[cfg(feature = "tpm")]
             Self::Tpm(device) => device.get_keypair(create)?,
+            #[cfg(feature = "nova-tz")]
+            Self::TrustZone(device) => device.get_keypair(create)?,
             Self::File(device) => device.get_keypair(create)?,
         };
         Ok(keypair)
@@ -224,6 +246,8 @@ impl Device {
             Self::Ecc(device) => device.provision()?,
             #[cfg(feature = "tpm")]
             Self::Tpm(device) => device.provision()?,
+            #[cfg(feature = "nova-tz")]
+            Self::TrustZone(device) => device.provision()?,
             Self::File(device) => device.provision()?,
         };
         Ok(keypair)
@@ -243,6 +267,12 @@ impl Device {
                 .into_iter()
                 .map(test::Test::Tpm)
                 .collect(),
+            #[cfg(feature = "nova-tz")]
+            Self::TrustZone(device) => device
+                .get_tests()
+                .into_iter()
+                .map(test::Test::TrustZone)
+                .collect(),
             Self::File(device) => device
                 .get_tests()
                 .into_iter()
@@ -260,5 +290,7 @@ pub enum Info {
     Ecc(ecc::Info),
     #[cfg(feature = "tpm")]
     Tpm(tpm::Info),
+    #[cfg(feature = "nova-tz")]
+    TrustZone(nova_tz::Info),
     File(file::Info),
 }
