@@ -1,4 +1,4 @@
-use crate::{cmd::key::print_keypair, Device, Result};
+use crate::{cmd::key::print_keypair, device::GatewaySecurityDevice, Device, Result};
 
 /// Configures the security device for gateway/miner use.
 #[derive(Debug, clap::Args)]

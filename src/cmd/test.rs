@@ -2,7 +2,7 @@ use crate::{
     cmd::print_json,
     device::{
         test::{self, TestOutcome, TestResult},
-        Device,
+        Device, GatewaySecurityDevice,
     },
     Result,
 };

@@ -1,9 +1,11 @@
 use crate::{
-    device::test::{self, TestResult},
+    device::{
+        test::{self, TestResult},
+        Config as DeviceConfig, GatewaySecurityDevice,
+    },
     Result,
 };
 use helium_crypto::{KeyTag, KeyType, Keypair, Sign, Verify};
-use http::Uri;
 use rand::rngs::OsRng;
 use serde::Serialize;
 use std::{
@@ -11,70 +13,24 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[derive(Debug, Clone)]
-pub struct Device {
-    /// The file device path
-    pub path: PathBuf,
-}
-
-impl Device {
-    /// Parses an ecc device url of the form `ecc:<dev>[:address][?slot=<slot>]`,
-    /// where <dev> is the device file name (usually begins with i2c or tty),
-    /// <address> is the bus address (default 96, ignored for swi), and <slot>
-    /// is the slot to use for key lookup/manipulation (default: 0)
-    pub fn from_url(url: &Uri) -> Result<Self> {
-        Ok(Self {
-            path: url.path().into(),
-        })
+impl GatewaySecurityDevice for gateway_security::device::file::Device {
+    fn provision(&self) -> Result<Keypair> {
+        Ok(self.get_keypair(true)?)
     }
 
-    pub fn get_info(&self) -> Result<Info> {
-        let keypair = self.get_keypair(false)?;
-        let key_type = keypair.key_tag().key_type.to_string();
-        let info = Info {
-            r#type: key_type,
+    fn get_config(&self) -> Result<DeviceConfig> {
+        Ok(DeviceConfig::File(Config {
             path: self.path.clone(),
-        };
-        Ok(info)
+        }))
     }
 
-    pub fn get_keypair(&self, create: bool) -> Result<Keypair> {
-        if !self.path.exists() || create {
-            let keypair = Keypair::generate(KeyTag::default(), &mut OsRng);
-            fs::write(&self.path, keypair.to_vec())?;
-        }
-        load_keypair(&self.path)
-    }
-
-    pub fn provision(&self) -> Result<Keypair> {
-        self.get_keypair(true)
-    }
-
-    pub fn get_config(&self) -> Result<Config> {
-        Ok(Config {
-            path: self.path.clone(),
-        })
-    }
-
-    pub fn get_tests(&self) -> Vec<Test> {
+    fn get_tests(&self) -> Vec<test::Test> {
         vec![
-            Test::MinerKey(self.path.clone()),
-            Test::Sign(self.path.clone()),
-            Test::Ecdh(self.path.clone()),
+            Test::MinerKey(self.path.clone()).into(),
+            Test::Sign(self.path.clone()).into(),
+            Test::Ecdh(self.path.clone()).into(),
         ]
     }
-}
-
-fn load_keypair<P: AsRef<Path>>(path: &P) -> Result<Keypair> {
-    let data = fs::read(path)?;
-    let keypair = Keypair::try_from(&data[..])?;
-    Ok(keypair)
-}
-
-#[derive(Debug, Serialize)]
-pub struct Info {
-    r#type: String,
-    path: PathBuf,
 }
 
 #[derive(Debug, Serialize)]
@@ -87,6 +43,12 @@ pub enum Test {
     MinerKey(PathBuf),
     Sign(PathBuf),
     Ecdh(PathBuf),
+}
+
+impl From<Test> for test::Test {
+    fn from(value: Test) -> Self {
+        Self::File(value)
+    }
 }
 
 impl fmt::Display for Test {
@@ -109,6 +71,12 @@ impl Test {
             Self::Ecdh(path) => check_ecdh(path),
         }
     }
+}
+
+fn load_keypair<P: AsRef<Path>>(path: &P) -> Result<Keypair> {
+    let data = fs::read(path)?;
+    let keypair = Keypair::try_from(&data[..])?;
+    Ok(keypair)
 }
 
 fn check_miner_key(path: &PathBuf) -> TestResult {

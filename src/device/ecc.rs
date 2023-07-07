@@ -1,8 +1,7 @@
 use crate::{
-    anyhow,
     device::{
         test::{self, TestResult},
-        DeviceArgs,
+        Config as DeviceConfig, GatewaySecurityDevice,
     },
     Result,
 };
@@ -11,67 +10,11 @@ use helium_crypto::{
     ecc608::{self, key_config::KeyConfigType, with_ecc, Ecc},
     KeyTag, KeyType, Keypair, Network, Sign, Verify,
 };
-use http::Uri;
 use serde::{Serialize, Serializer};
-use std::{
-    fmt,
-    path::{Path, PathBuf},
-};
+use std::fmt;
 
-#[derive(Debug, Clone)]
-pub struct Device {
-    /// The i2c/swi device path
-    pub path: PathBuf,
-    /// The bus address
-    pub address: u16,
-    /// The ecc slot to use
-    pub slot: u8,
-}
-
-impl Device {
-    /// Parses an ecc device url of the form `ecc:<dev>[:address][?slot=<slot>]`,
-    /// where <dev> is the device file name (usually begins with i2c or tty),
-    /// <address> is the bus address (default 96, ignored for swi), and <slot>
-    /// is the slot to use for key lookup/manipulation (default: 0)
-    pub fn from_url(url: &Uri) -> Result<Self> {
-        let args = DeviceArgs::from_uri(url)?;
-        let address = url.port_u16().unwrap_or(96);
-        let slot = args.get("slot", 0)?;
-        let path = url
-            .host()
-            .map(|dev| Path::new("/dev").join(dev))
-            .ok_or_else(|| anyhow!("missing ecc device path"))?;
-
-        // Initialize the global instance if not already initialized
-        ecc608::init(&path.to_string_lossy(), address)?;
-
-        Ok(Self {
-            path,
-            address,
-            slot,
-        })
-    }
-
-    pub fn get_info(&self) -> Result<Info> {
-        let info = with_ecc(|ecc: &mut Ecc| {
-            ecc.get_info()
-                .and_then(|info| ecc.get_serial().map(|serial| Info { info, serial }))
-        })?;
-        Ok(info)
-    }
-
-    pub fn get_keypair(&self, create: bool) -> Result<Keypair> {
-        let keypair: Keypair = with_ecc(|ecc| {
-            if create {
-                generate_compact_key_in_slot(ecc, self.slot)
-            } else {
-                compact_key_in_slot(ecc, self.slot)
-            }
-        })?;
-        Ok(keypair)
-    }
-
-    pub fn provision(&self) -> Result<Keypair> {
+impl GatewaySecurityDevice for gateway_security::device::ecc::Device {
+    fn provision(&self) -> Result<Keypair> {
         let slot_config = ecc608::SlotConfig::default();
         let key_config = ecc608::KeyConfig::default();
         for slot in 0..=ecc608::MAX_SLOT {
@@ -81,32 +24,32 @@ impl Device {
         with_ecc(|ecc| ecc.set_locked(ecc608::Zone::Config))?;
         with_ecc(|ecc| ecc.set_locked(ecc608::Zone::Data))?;
 
-        self.get_keypair(true)
+        Ok(self.get_keypair(true)?)
     }
 
-    pub fn get_config(&self) -> Result<Config> {
+    fn get_config(&self) -> Result<DeviceConfig> {
         let slot_config = with_ecc(|ecc| ecc.get_slot_config(self.slot))?;
         let key_config = with_ecc(|ecc| ecc.get_key_config(self.slot))?;
         let zones = [ecc608::Zone::Config, ecc608::Zone::Data]
             .into_iter()
             .map(get_zone_config)
             .collect::<Result<Vec<ZoneConfig>>>()?;
-        Ok(Config {
+        Ok(DeviceConfig::Ecc(Config {
             slot_config,
             key_config,
             zones,
-        })
+        }))
     }
 
-    pub fn get_tests(&self) -> Vec<Test> {
+    fn get_tests(&self) -> Vec<test::Test> {
         vec![
-            Test::zone_locked(ecc608::Zone::Data),
-            Test::zone_locked(ecc608::Zone::Config),
-            Test::slot_config(self.slot, ecc608::SlotConfig::default()),
-            Test::key_config(self.slot, ecc608::KeyConfig::default()),
-            Test::MinerKey(self.slot),
-            Test::Sign(self.slot),
-            Test::Ecdh(self.slot),
+            Test::zone_locked(ecc608::Zone::Data).into(),
+            Test::zone_locked(ecc608::Zone::Config).into(),
+            Test::slot_config(self.slot, ecc608::SlotConfig::default()).into(),
+            Test::key_config(self.slot, ecc608::KeyConfig::default()).into(),
+            Test::MinerKey(self.slot).into(),
+            Test::Sign(self.slot).into(),
+            Test::Ecdh(self.slot).into(),
         ]
     }
 }
@@ -114,19 +57,6 @@ impl Device {
 fn compact_key_in_slot(ecc: &mut Ecc, slot: u8) -> Result<Keypair> {
     let keypair = ecc608::Keypair::from_ecc_slot(ecc, Network::MainNet, slot)?;
     Ok(keypair.into())
-}
-
-fn generate_compact_key_in_slot(ecc: &mut Ecc, slot: u8) -> Result<Keypair> {
-    let mut try_count = 5;
-    loop {
-        ecc.genkey(ecc608::KeyType::Private, slot)?;
-
-        match compact_key_in_slot(ecc, slot) {
-            Ok(keypair) => return Ok(keypair),
-            Err(err) if try_count == 0 => return Err(err),
-            Err(_) => try_count -= 1,
-        }
-    }
 }
 
 fn get_zone_config(zone: ecc608::Zone) -> Result<ZoneConfig> {
@@ -184,6 +114,12 @@ pub enum Test {
     MinerKey(u8),
     Sign(u8),
     Ecdh(u8),
+}
+
+impl From<Test> for test::Test {
+    fn from(test: Test) -> Self {
+        Self::Ecc(test)
+    }
 }
 
 impl fmt::Display for Test {
