@@ -1,4 +1,4 @@
-use crate::{cmd::print_json, Device, Result};
+use crate::{cmd::print_json, device::GatewaySecurityDevice, Device, Result};
 
 /// Gets the security device configuration
 #[derive(Debug, clap::Args)]

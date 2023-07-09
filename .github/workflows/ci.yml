@@ -5,6 +5,13 @@ on:
     branches: [main]
     tags: ["v*"]
 
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUST_BACKTRACE: short
+  RUSTFLAGS: "-D warnings"
+  RUSTUP_MAX_RETRIES: 10
+
 name: ci
 
 jobs:
@@ -18,7 +25,7 @@ jobs:
           components: clippy, rustfmt
 
       - name: Install dependencies
-        run: sudo apt-get install -y libtss2-dev
+        run: sudo apt-get install -y protobuf-compiler libtss2-dev
 
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.11.0
@@ -62,7 +69,7 @@ jobs:
           repo: rust-embedded/cross
 
       - name: build target
-        run: cargo make --profile ${{ matrix.target }} build
+        run: cargo make --profile ${{ matrix.target }} build -l verbose
 
       - name: package release
         if: startsWith(github.ref, 'refs/tags')
