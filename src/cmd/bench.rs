@@ -38,7 +38,7 @@ fn round2(v: f64) -> f64 {
 fn bench_sign(keypair: &Keypair, iterations: u32) -> Result<(Duration, Vec<Duration>)> {
     let mut total_duration = Duration::new(0, 0);
     let mut durations = Vec::new();
-    for _ in 1..iterations {
+    for _ in 0..iterations {
         let mut data = [0u8; 32];
         OsRng.try_fill_bytes(&mut data)?;
 
