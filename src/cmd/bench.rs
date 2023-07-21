@@ -38,9 +38,9 @@ fn round2(v: f64) -> f64 {
 fn bench_sign(keypair: &Keypair, iterations: u32) -> Result<(Duration, Vec<Duration>)> {
     let mut total_duration = Duration::new(0, 0);
     let mut durations = Vec::new();
+    let data = [0u8; 32];
     for _ in 0..iterations {
-        let mut data = [0u8; 32];
-        OsRng.try_fill_bytes(&mut data)?;
+        /// OsRng.try_fill_bytes(&mut data)?;
 
         let start = Instant::now();
         let _signature = keypair.sign(&data)?;
