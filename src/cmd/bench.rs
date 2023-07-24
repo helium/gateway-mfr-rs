@@ -13,6 +13,9 @@ pub struct Cmd {
     /// Number of iterations to use for test
     #[arg(long, short, default_value_t = 100)]
     pub iterations: u32,
+    /// Flag to enable durations in the results
+    #[arg(long, short)]
+    pub durations: bool,
 }
 
 impl Cmd {
@@ -21,12 +24,15 @@ impl Cmd {
         let (duration, durations) = bench_sign(&keypair, self.iterations)?;
         let rate = self.iterations as f64 / duration.as_secs_f64();
         let avg_ms = duration.as_millis() as f64 / self.iterations as f64;
-        let json = json!({
+        let mut json = json!({
             "iterations": self.iterations,
             "avg_ms": round2(avg_ms),
             "rate": round2(rate),
-            "durations": durations.into_iter().map(|d| d.as_millis()).collect::<Vec<_>>(),
         });
+        if self.durations {
+            json.as_object_mut().unwrap().insert("durations".to_string(), 
+            json!(durations.into_iter().map(|d| d.as_millis()).collect::<Vec<_>>()));
+        }
         print_json(&json)
     }
 }
