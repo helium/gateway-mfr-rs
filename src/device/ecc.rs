@@ -8,7 +8,7 @@ use crate::{
 };
 use bytes::Bytes;
 use helium_crypto::{
-    ecc608::{self, key_config::KeyConfigType, with_ecc, Ecc},
+    ecc608::{self, key_config::KeyConfigType, with_ecc, Ecc, EccConfig},
     KeyTag, KeyType, Keypair, Network, Sign, Verify,
 };
 use http::Uri;
@@ -16,6 +16,7 @@ use serde::{Serialize, Serializer};
 use std::{
     fmt,
     path::{Path, PathBuf},
+    time::Duration,
 };
 
 #[derive(Debug, Clone)]
@@ -42,8 +43,13 @@ impl Device {
             .map(|dev| Path::new("/dev").join(dev))
             .ok_or_else(|| anyhow!("missing ecc device path"))?;
 
+        let mut config = EccConfig::default();
+
+        config.wake_delay =
+            Duration::from_micros(args.get("wake_delay", config.wake_delay.as_micros() as u64)?);
+
         // Initialize the global instance if not already initialized
-        ecc608::init(&path.to_string_lossy(), address)?;
+        ecc608::init(&path.to_string_lossy(), address, config)?;
 
         Ok(Self {
             path,
@@ -331,10 +337,10 @@ fn check_ecdh(slot: u8) -> TestResult {
     let ecc_shared_secret = keypair.ecdh(other_keypair.public_key())?;
     let other_shared_secret = other_keypair.ecdh(keypair.public_key())?;
 
-    if ecc_shared_secret.raw_secret_bytes() != other_shared_secret.raw_secret_bytes() {
+    if ecc_shared_secret.as_bytes() != other_shared_secret.as_bytes() {
         return test::expected(
-            format!("{:#02x}", ecc_shared_secret.raw_secret_bytes()),
-            format!("{:#02x}", other_shared_secret.raw_secret_bytes()),
+            format!("{:#02x}", ecc_shared_secret.as_bytes()),
+            format!("{:#02x}", other_shared_secret.as_bytes()),
         )
         .into();
     }
