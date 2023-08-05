@@ -43,6 +43,13 @@ pub enum Config {
     File(file::Config),
 }
 
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum FileConfig {
+    #[cfg(feature = "ecc608")]
+    Ecc(ecc::FileConfig),
+}
+
 pub mod test {
     use crate::Result;
 
@@ -187,6 +194,10 @@ impl DeviceArgs {
         Ok(Self(args))
     }
 
+    pub fn get_string(&self, name: &str) -> Option<String> {
+        self.0.get(name).cloned()
+    }
+
     pub fn get<T>(&self, name: &str, default: T) -> Result<T>
     where
         T: std::str::FromStr,
@@ -279,6 +290,15 @@ impl Device {
                 .map(test::Test::File)
                 .collect(),
         }
+    }
+
+    pub fn generate_config(&self) -> Result<FileConfig> {
+        let config = match self {
+            #[cfg(feature = "ecc608")]
+            Self::Ecc(device) => FileConfig::Ecc(device.generate_config()?),
+            _ => return Err(anyhow!("device does not support config generation")),
+        };
+        Ok(config)
     }
 }
 

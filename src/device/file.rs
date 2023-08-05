@@ -136,10 +136,10 @@ fn check_ecdh(path: &PathBuf) -> TestResult {
     let ecc_shared_secret = keypair.ecdh(other_keypair.public_key())?;
     let other_shared_secret = other_keypair.ecdh(keypair.public_key())?;
 
-    if ecc_shared_secret.raw_secret_bytes() != other_shared_secret.raw_secret_bytes() {
+    if ecc_shared_secret.as_bytes() != other_shared_secret.as_bytes() {
         return test::expected(
-            format!("{:#02x}", ecc_shared_secret.raw_secret_bytes()),
-            format!("{:#02x}", other_shared_secret.raw_secret_bytes()),
+            format!("{:#02x}", ecc_shared_secret.as_bytes()),
+            format!("{:#02x}", other_shared_secret.as_bytes()),
         )
         .into();
     }
