@@ -30,6 +30,7 @@ pub enum Cmd {
     Config(cmd::config::Cmd),
     Test(cmd::test::Cmd),
     Bench(cmd::bench::Cmd),
+    Generate(cmd::generate::Cmd),
 }
 
 pub fn main() -> Result {
@@ -46,6 +47,7 @@ impl Cmd {
             Self::Config(cmd) => cmd.run(device),
             Self::Test(cmd) => cmd.run(device),
             Self::Bench(cmd) => cmd.run(device),
+            Self::Generate(cmd) => cmd.run(device),
         }
     }
 }
