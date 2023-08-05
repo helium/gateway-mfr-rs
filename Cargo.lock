@@ -389,8 +389,9 @@ checksum = "2c4a817d8b683f6e649aed359aab0c47a875377516bb5791d0f7e46d9066d209"
 
 [[package]]
 name = "ecc608-linux"
-version = "0.1.9"
-source = "git+https://github.com/helium/ecc608-linux-rs.git?branch=madninja/ecc_config#b437862286bda3e1d289aa471e36379eb62744a0"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "188865ddf3637960e2140bb94c7edbcfc752a011e49b915407703ac4f24d1992"
 dependencies = [
  "bitfield",
  "bytes",
@@ -580,8 +581,9 @@ checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
 name = "helium-crypto"
-version = "0.7.3"
-source = "git+https://github.com/helium/helium-crypto-rs.git?branch=madninja/ecc_config#9833871c439a9688c4b1202d52d7d82117790e1f"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5847434afa99d189f926f2337172a2072785edc1762adb36313e74038c86008"
 dependencies = [
  "base64",
  "bs58",
