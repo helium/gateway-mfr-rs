@@ -1,5 +1,6 @@
 pub mod bench;
 pub mod config;
+pub mod generate;
 pub mod info;
 pub mod key;
 pub mod provision;
