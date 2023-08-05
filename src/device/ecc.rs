@@ -8,15 +8,17 @@ use crate::{
 };
 use bytes::Bytes;
 use helium_crypto::{
-    ecc608::{self, key_config::KeyConfigType, with_ecc, Ecc},
+    ecc608::{self, key_config::KeyConfigType, with_ecc, Ecc, EccConfig},
     KeyTag, KeyType, Keypair, Network, Sign, Verify,
 };
 use http::Uri;
 use serde::{Serialize, Serializer};
 use std::{
-    fmt,
+    fmt, fs,
     path::{Path, PathBuf},
 };
+
+pub use ecc608::EccConfig as FileConfig;
 
 #[derive(Debug, Clone)]
 pub struct Device {
@@ -26,6 +28,8 @@ pub struct Device {
     pub address: u16,
     /// The ecc slot to use
     pub slot: u8,
+    /// The config parameters
+    pub config: Option<EccConfig>,
 }
 
 impl Device {
@@ -42,17 +46,33 @@ impl Device {
             .map(|dev| Path::new("/dev").join(dev))
             .ok_or_else(|| anyhow!("missing ecc device path"))?;
 
-        // Initialize the global instance if not already initialized
-        ecc608::init(&path.to_string_lossy(), address)?;
+        let config = if let Some(config_file) = args.get_string("config") {
+            let contents = fs::read_to_string(config_file)?;
+            let config: EccConfig = toml::from_str(&contents)?;
+            Some(config)
+        } else {
+            None
+        };
 
         Ok(Self {
             path,
             address,
             slot,
+            config,
         })
     }
 
+    fn init_device(&self) -> Result {
+        // Initialize the global instance if not already initialized
+        Ok(ecc608::init(
+            &self.path.to_string_lossy(),
+            self.address,
+            self.config,
+        )?)
+    }
+
     pub fn get_info(&self) -> Result<Info> {
+        self.init_device()?;
         let info = with_ecc(|ecc: &mut Ecc| {
             ecc.get_info()
                 .and_then(|info| ecc.get_serial().map(|serial| Info { info, serial }))
@@ -61,6 +81,7 @@ impl Device {
     }
 
     pub fn get_keypair(&self, create: bool) -> Result<Keypair> {
+        self.init_device()?;
         let keypair: Keypair = with_ecc(|ecc| {
             if create {
                 generate_compact_key_in_slot(ecc, self.slot)
@@ -72,6 +93,7 @@ impl Device {
     }
 
     pub fn provision(&self) -> Result<Keypair> {
+        self.init_device()?;
         let slot_config = ecc608::SlotConfig::default();
         let key_config = ecc608::KeyConfig::default();
         for slot in 0..=ecc608::MAX_SLOT {
@@ -85,6 +107,7 @@ impl Device {
     }
 
     pub fn get_config(&self) -> Result<Config> {
+        self.init_device()?;
         let slot_config = with_ecc(|ecc| ecc.get_slot_config(self.slot))?;
         let key_config = with_ecc(|ecc| ecc.get_key_config(self.slot))?;
         let zones = [ecc608::Zone::Config, ecc608::Zone::Data]
@@ -96,6 +119,11 @@ impl Device {
             key_config,
             zones,
         })
+    }
+
+    pub fn generate_config(&self) -> Result<FileConfig> {
+        let config = ecc608::EccConfig::from_path(&self.path.to_string_lossy())?;
+        Ok(config)
     }
 
     pub fn get_tests(&self) -> Vec<Test> {
@@ -331,10 +359,10 @@ fn check_ecdh(slot: u8) -> TestResult {
     let ecc_shared_secret = keypair.ecdh(other_keypair.public_key())?;
     let other_shared_secret = other_keypair.ecdh(keypair.public_key())?;
 
-    if ecc_shared_secret.raw_secret_bytes() != other_shared_secret.raw_secret_bytes() {
+    if ecc_shared_secret.as_bytes() != other_shared_secret.as_bytes() {
         return test::expected(
-            format!("{:#02x}", ecc_shared_secret.raw_secret_bytes()),
-            format!("{:#02x}", other_shared_secret.raw_secret_bytes()),
+            format!("{:#02x}", ecc_shared_secret.as_bytes()),
+            format!("{:#02x}", other_shared_secret.as_bytes()),
         )
         .into();
     }
