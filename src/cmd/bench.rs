@@ -17,6 +17,7 @@ pub struct Cmd {
 
 impl Cmd {
     pub fn run(&self, device: &Device) -> Result {
+        device.init()?;
         let keypair = device.get_keypair(false)?;
         let duration = bench_sign(&keypair, self.iterations)?;
         let rate = self.iterations as f64 / duration.as_secs_f64();

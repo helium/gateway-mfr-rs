@@ -6,6 +6,7 @@ pub struct Cmd {}
 
 impl Cmd {
     pub fn run(&self, device: &Device) -> Result {
+        device.init()?;
         let config = device.get_config()?;
         print_json(&config)
     }

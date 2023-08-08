@@ -14,6 +14,7 @@ pub struct Cmd {
 
 impl Cmd {
     pub fn run(&self, device: &Device) -> Result {
+        device.init()?;
         let keypair = device.get_keypair(self.generate)?;
         print_keypair(&keypair)
     }
