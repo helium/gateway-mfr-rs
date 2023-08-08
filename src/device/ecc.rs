@@ -62,7 +62,7 @@ impl Device {
         })
     }
 
-    fn init_device(&self) -> Result {
+    pub fn init(&self) -> Result {
         // Initialize the global instance if not already initialized
         Ok(ecc608::init(
             &self.path.to_string_lossy(),
@@ -72,7 +72,6 @@ impl Device {
     }
 
     pub fn get_info(&self) -> Result<Info> {
-        self.init_device()?;
         let info = with_ecc(|ecc: &mut Ecc| {
             ecc.get_info()
                 .and_then(|info| ecc.get_serial().map(|serial| Info { info, serial }))
@@ -81,7 +80,6 @@ impl Device {
     }
 
     pub fn get_keypair(&self, create: bool) -> Result<Keypair> {
-        self.init_device()?;
         let keypair: Keypair = with_ecc(|ecc| {
             if create {
                 generate_compact_key_in_slot(ecc, self.slot)
@@ -93,7 +91,6 @@ impl Device {
     }
 
     pub fn provision(&self) -> Result<Keypair> {
-        self.init_device()?;
         let slot_config = ecc608::SlotConfig::default();
         let key_config = ecc608::KeyConfig::default();
         for slot in 0..=ecc608::MAX_SLOT {
@@ -107,7 +104,6 @@ impl Device {
     }
 
     pub fn get_config(&self) -> Result<Config> {
-        self.init_device()?;
         let slot_config = with_ecc(|ecc| ecc.get_slot_config(self.slot))?;
         let key_config = with_ecc(|ecc| ecc.get_key_config(self.slot))?;
         let zones = [ecc608::Zone::Config, ecc608::Zone::Data]

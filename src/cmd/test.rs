@@ -15,6 +15,7 @@ pub struct Cmd {}
 
 impl Cmd {
     pub fn run(&self, device: &Device) -> Result {
+        device.init()?;
         let tests = device.get_tests();
         let results: Vec<(String, TestResult)> = tests
             .iter()

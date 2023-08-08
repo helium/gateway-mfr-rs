@@ -212,6 +212,14 @@ impl DeviceArgs {
 }
 
 impl Device {
+    pub fn init(&self) -> Result {
+        match self {
+            #[cfg(feature = "ecc608")]
+            Self::Ecc(device) => device.init(),
+            _ => Ok(()),
+        }
+    }
+
     pub fn get_info(&self) -> Result<Info> {
         let info = match self {
             #[cfg(feature = "ecc608")]
