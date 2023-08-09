@@ -1,6 +1,6 @@
 [package]
 name = "gateway-mfr"
-version = "0.4.2"
+version = "0.5.3"
 authors = ["Marc Nijdam <marc@helium.com>"]
 edition = "2021"
 license = "Apache-2.0"
@@ -22,7 +22,7 @@ serde_urlencoded = "*"
 http = "0"
 bytes = "*"
 angry-purple-tiger = "0"
-helium-crypto = { git = "https://github.com/helium/helium-crypto-rs.git", branch = "madninja/ecc_config" }
+helium-crypto = { version = ">=0.8" }
 
 [features]
 default = ["ecc608"]
