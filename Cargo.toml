@@ -22,10 +22,11 @@ serde_urlencoded = "*"
 http = "0"
 bytes = "*"
 angry-purple-tiger = "0"
-helium-crypto = { version = ">=0.8" }
+helium-crypto = { git = "https://github.com/joecryptotoo/helium-crypto-rs.git", branch = "joecryptotoo/wake_fix" }
 
 [features]
 default = ["ecc608"]
 tpm = ["helium-crypto/tpm"]
 ecc608 = ["helium-crypto/ecc608"]
+raspi = ["ecc608", "helium-crypto/raspi"]
 nova-tz = ["helium-crypto/nova-tz"]
